@@ -457,3 +457,4 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
     </div>
   );
 };
+

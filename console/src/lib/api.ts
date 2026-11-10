@@ -214,3 +214,4 @@ export async function fetchLiveDoubts(subject: string | null): Promise<LiveDoubt
   }
   return doubts;
 }
+

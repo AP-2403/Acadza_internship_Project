@@ -14,7 +14,11 @@ import {
   ChevronRight,
   MessageSquarePlus,
   AlertTriangle,
-  Award
+  Award,
+  BookOpen,
+  FileText,
+  Check,
+  AlertCircle
 } from 'lucide-react';
 import { User, QuestionTestResult, TestStats } from '../types';
 import { submitStudentTest, submitStudentDoubt } from '../lib/api';
@@ -26,10 +30,16 @@ interface StudentTestPortalProps {
 }
 
 export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLogout }) => {
-  const [phase, setPhase] = useState<'solving' | 'results'>('solving');
+  // Navigation phases: 'library' (dashboard), 'solving' (taking test), 'results' (review & doubts)
+  const [phase, setPhase] = useState<'library' | 'solving' | 'results'>('library');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // In-app modal states
+  const [showInstructionsModal, setShowInstructionsModal] = useState(false);
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [hasAgreedInstructions, setHasAgreedInstructions] = useState(false);
 
   // Results state
   const [stats, setStats] = useState<TestStats | null>(null);
@@ -44,7 +54,7 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
 
   const questions = useMemo(() => questionsRaw as any[], []);
 
-  // Filtered solving questions by subject if desired
+  // Filtered solving questions by subject
   const [solvingSubject, setSolvingSubject] = useState<'all' | 'Physics' | 'Zoology' | 'Botany'>('all');
 
   const visibleSolvingQuestions = useMemo(() => {
@@ -54,6 +64,10 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
 
   const currentQuestion = visibleSolvingQuestions[currentIndex] || visibleSolvingQuestions[0];
   const currentQId = currentQuestion ? currentQuestion._id : '';
+
+  // Calculate attempted vs not attempted counts
+  const attemptedCount = useMemo(() => Object.keys(answers).length, [answers]);
+  const notAttemptedCount = useMemo(() => questions.length - attemptedCount, [questions.length, attemptedCount]);
 
   // Handle option selection
   const handleSelectOption = (qid: string, option: string) => {
@@ -71,12 +85,18 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
     });
   };
 
-  // Submit full test paper
-  const handleSubmitTest = async () => {
-    const answeredCount = Object.keys(answers).length;
-    const confirmMsg = `You have answered ${answeredCount} of ${questions.length} questions. Are you sure you want to finish and submit the test?`;
-    if (!window.confirm(confirmMsg)) return;
+  // Start test from library
+  const handleStartTest = () => {
+    setShowInstructionsModal(false);
+    setAnswers({});
+    setCurrentIndex(0);
+    setPhase('solving');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
+  // Final submission confirmation from custom modal
+  const handleConfirmSubmit = async () => {
+    setShowSubmitModal(false);
     setIsSubmitting(true);
     const { stats: calculatedStats, results: evaluatedResults } = await submitStudentTest(
       answers,
@@ -130,7 +150,7 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
       
       {/* Top Navigation Bar */}
-      <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shadow-sm sticky top-0 z-30">
+      <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shadow-xs sticky top-0 z-30">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">
             <GraduationCap className="w-5 h-5" />
@@ -139,17 +159,24 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
             <div className="flex items-center gap-2">
               <span className="text-base font-extrabold text-slate-900">Acadza Student Portal</span>
               <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
-                JEE / NEET Test Suite
+                JEE & NEET Test Series
               </span>
             </div>
             <div className="text-xs text-slate-500">
-              Welcome, <span className="font-semibold text-slate-700">{user.name}</span>
+              Logged in as <span className="font-semibold text-slate-700">{user.name}</span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          {phase === 'solving' ? (
+        <div className="flex items-center gap-3">
+          {phase === 'library' && (
+            <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg">
+              <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+              <span>Test Library</span>
+            </div>
+          )}
+
+          {phase === 'solving' && (
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700">
                 <Clock className="w-3.5 h-3.5 text-blue-600" />
@@ -157,27 +184,38 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
               </div>
               <button
                 type="button"
-                onClick={handleSubmitTest}
-                disabled={isSubmitting}
+                onClick={() => setShowSubmitModal(true)}
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 active:scale-[0.98]"
               >
-                <span>{isSubmitting ? 'Evaluating...' : 'Submit Test Paper'}</span>
+                <span>Submit Test Paper</span>
                 <CheckCircle2 className="w-4 h-4" />
               </button>
             </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                setPhase('solving');
-                setAnswers({});
-                setCurrentIndex(0);
-              }}
-              className="px-3.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-semibold border border-blue-200 transition-colors flex items-center gap-1.5"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Retake Test</span>
-            </button>
+          )}
+
+          {phase === 'results' && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPhase('library')}
+                className="px-3.5 py-1.5 bg-slate-50 text-slate-700 hover:bg-slate-100 rounded-lg text-xs font-semibold border border-slate-300 transition-colors flex items-center gap-1.5"
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Test Library</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAnswers({});
+                  setCurrentIndex(0);
+                  setPhase('solving');
+                }}
+                className="px-3.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-semibold border border-blue-200 transition-colors flex items-center gap-1.5"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Retake Test</span>
+              </button>
+            </div>
           )}
 
           <button
@@ -190,6 +228,150 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
           </button>
         </div>
       </header>
+
+      {/* ========================================================= */}
+      {/* PHASE 0: TEST LIBRARY & DASHBOARD                         */}
+      {/* ========================================================= */}
+      {phase === 'library' && (
+        <main className="flex-1 p-6 md:p-8 max-w-6xl mx-auto w-full space-y-6">
+          
+          {/* Welcome Banner */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl text-white p-6 sm:p-8 shadow-md">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs font-semibold mb-3">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>JEE & NEET All-India Test Series</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                Welcome, {user.name}
+              </h1>
+              <p className="text-blue-100 text-xs sm:text-sm mt-2 leading-relaxed">
+                Choose a test paper from your library below. Attempt all questions under realistic exam conditions, receive instant auto-grading, and submit any question doubts straight to the specialized subject faculty.
+              </p>
+            </div>
+          </div>
+
+          {/* Test Paper Library Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Available Test Papers</h2>
+                <p className="text-xs text-slate-500">Select a test paper to view syllabus and begin</p>
+              </div>
+              <span className="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-200">
+                1 Test Assigned
+              </span>
+            </div>
+
+            {/* Paper 1 Card */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                
+                {/* Paper Info Left */}
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-bold px-2.5 py-1 rounded bg-slate-900 text-white">
+                      PAPER 1
+                    </span>
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded bg-blue-100 text-blue-800">
+                      Full Syllabus Mock Test
+                    </span>
+                    <span className="text-xs font-medium px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span>Ready to Start</span>
+                    </span>
+                  </div>
+
+                  <h3 className="text-xl font-extrabold text-slate-900">
+                    JEE / NEET Comprehensive Mock Examination — Paper 1
+                  </h3>
+                  <p className="text-xs text-slate-600 max-w-2xl leading-relaxed">
+                    A rigorous 43-question test covering high-yield JEE & NEET topics across Physics, Zoology, and Botany. Features single-choice, multiple-choice, and numerical integer problems.
+                  </p>
+
+                  {/* Subject Breakdown Pills */}
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <span className="text-xs font-semibold text-slate-500 mr-1">Subject Coverage:</span>
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-purple-50 text-purple-800 border border-purple-200">
+                      ⚛️ Physics (33 Questions)
+                    </span>
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      🧬 Zoology (6 Questions)
+                    </span>
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200">
+                      🌿 Botany (4 Questions)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Paper Stats & Start Action Right */}
+                <div className="flex flex-col sm:flex-row lg:flex-col items-start lg:items-end justify-between gap-4 border-t lg:border-t-0 lg:border-l border-slate-100 pt-4 lg:pt-0 lg:pl-6 shrink-0">
+                  <div className="grid grid-cols-2 gap-4 text-left lg:text-right">
+                    <div>
+                      <div className="text-[11px] text-slate-400 font-semibold uppercase">Total Questions</div>
+                      <div className="text-lg font-black text-slate-800">43 Questions</div>
+                    </div>
+                    <div>
+                      <div className="text-[11px] text-slate-400 font-semibold uppercase">Duration</div>
+                      <div className="text-lg font-black text-slate-800">60 Mins</div>
+                    </div>
+                    <div>
+                      <div className="text-[11px] text-slate-400 font-semibold uppercase">Marking Scheme</div>
+                      <div className="text-xs font-bold text-slate-700">+4 / -1 / 0</div>
+                    </div>
+                    <div>
+                      <div className="text-[11px] text-slate-400 font-semibold uppercase">Faculty Routing</div>
+                      <div className="text-xs font-bold text-indigo-600">Active Live</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => setShowInstructionsModal(true)}
+                      className="flex-1 sm:flex-none px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2"
+                    >
+                      <BookOpen className="w-4 h-4" />
+                      <span>View Instructions & Start</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* Test History if completed */}
+            {stats && (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm">
+                    <Award className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900">
+                      Previous Attempt Completed
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      Score: <strong className="text-emerald-700">{stats.scorePercent}%</strong> &bull; {stats.correct} Correct, {stats.incorrect} Wrong
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setPhase('results')}
+                  className="px-3.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg text-xs font-semibold text-slate-700 transition-colors"
+                >
+                  View Scorecard & Doubts
+                </button>
+              </div>
+            )}
+
+          </div>
+
+        </main>
+      )}
 
       {/* ========================================================= */}
       {/* PHASE 1: SOLVING MODE (THE QUESTION PAPER)                 */}
@@ -214,7 +396,7 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
                       {currentQuestion.subject}
                     </span>
                     <span className="text-xs font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-600">
-                      {currentQuestion.chapter || 'General Physics'}
+                      {currentQuestion.chapter || 'General'}
                     </span>
                     <span className="text-[11px] font-semibold uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-500">
                       {currentQuestion.questionType}
@@ -223,7 +405,7 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
 
                   <div className="text-xs font-semibold text-slate-500">
                     {answers[currentQId] ? (
-                      <span className="text-emerald-600 flex items-center gap-1">
+                      <span className="text-emerald-600 flex items-center gap-1 font-bold">
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         Selected: Option {answers[currentQId]}
                       </span>
@@ -270,7 +452,7 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
                         value={answers[currentQId] || ''}
                         onChange={(e) => handleSelectOption(currentQId, e.target.value)}
                         placeholder="Enter numerical value..."
-                        className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                        className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white text-slate-900 font-semibold"
                       />
                     </div>
                   ) : (
@@ -342,7 +524,7 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
                     ) : (
                       <button
                         type="button"
-                        onClick={handleSubmitTest}
+                        onClick={() => setShowSubmitModal(true)}
                         className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-xs font-bold text-white flex items-center gap-1.5 shadow-sm transition-all"
                       >
                         <span>Finish & Submit</span>
@@ -388,7 +570,7 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
             <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs">
               <span className="font-semibold text-slate-600">Progress:</span>
               <span className="font-bold text-blue-700">
-                {Object.keys(answers).length} / {questions.length} Answered
+                {attemptedCount} / {questions.length} Answered
               </span>
             </div>
 
@@ -427,11 +609,11 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
             <div className="p-4 border-t border-slate-200 bg-slate-50 space-y-1.5 text-[11px] text-slate-600">
               <div className="flex items-center gap-2">
                 <span className="w-3.5 h-3.5 rounded bg-blue-600 inline-block"></span>
-                <span>Answered</span>
+                <span>Answered ({attemptedCount})</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3.5 h-3.5 rounded bg-slate-200 inline-block"></span>
-                <span>Not Attempted</span>
+                <span>Not Attempted ({notAttemptedCount})</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3.5 h-3.5 rounded border-2 border-blue-600 inline-block"></span>
@@ -584,7 +766,6 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
                 const isWrong = item.status === 'wrong';
                 const isUnattempted = item.status === 'unattempted';
 
-                // Status border and badge style
                 const borderClass = isCorrect
                   ? 'border-emerald-300 border-l-4 border-l-emerald-500'
                   : isWrong
@@ -687,9 +868,7 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
                       </div>
                     )}
 
-                    {/* ========================================================= */}
-                    {/* FEEDBACK & DOUBT SUBMISSION AREA UNDER EVERY QUESTION      */}
-                    {/* ========================================================= */}
+                    {/* Feedback & Doubt Submission Box */}
                     <div className="mt-6 pt-4 border-t border-slate-100 bg-slate-50/70 -mx-6 -mb-6 p-6 rounded-b-xl">
                       <div className="flex items-center gap-2 mb-2">
                         <MessageSquarePlus className="w-4 h-4 text-indigo-600" />
@@ -775,6 +954,195 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
                   </div>
                 );
               })}
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* IN-APP MODAL 1: TEST INSTRUCTIONS & CONFIRM TO START       */}
+      {/* ========================================================= */}
+      {showInstructionsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            
+            {/* Modal Header */}
+            <div className="p-6 bg-slate-50 border-b border-slate-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">
+                    Paper 1 &bull; Instructions & Guidelines
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    JEE / NEET Comprehensive Mock Examination
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4 text-xs text-slate-700 max-h-[60vh] overflow-y-auto">
+              <div className="grid grid-cols-3 gap-2 p-3 bg-blue-50/70 border border-blue-100 rounded-xl text-center">
+                <div>
+                  <span className="text-[10px] text-slate-500 block uppercase font-bold">Questions</span>
+                  <span className="text-sm font-extrabold text-blue-900">43 Total</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-500 block uppercase font-bold">Time Limit</span>
+                  <span className="text-sm font-extrabold text-blue-900">60 Minutes</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-500 block uppercase font-bold">Marking</span>
+                  <span className="text-sm font-extrabold text-blue-900">+4 / -1 / 0</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider">Exam Rules:</h4>
+                <ul className="space-y-2 text-slate-600 list-disc pl-4">
+                  <li>
+                    <strong>Single Choice Questions (SCQ):</strong> Select one correct option out of A, B, C, D. (+4 for correct, -1 for wrong).
+                  </li>
+                  <li>
+                    <strong>Multiple Choice Questions (MCQ):</strong> One or more options may be correct.
+                  </li>
+                  <li>
+                    <strong>Integer Questions:</strong> Type the exact numerical integer value in the input field.
+                  </li>
+                  <li>
+                    <strong>Post-Test Review & Doubt Submission:</strong> After submitting, each question will be marked 🟢 Green (Correct), 🔴 Red (Wrong), or ⚪ Grey (Unattempted). You can write questions or doubts directly under each question to alert the subject faculty.
+                  </li>
+                </ul>
+              </div>
+
+              <label className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100/70 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={hasAgreedInstructions}
+                  onChange={(e) => setHasAgreedInstructions(e.target.value === 'true' || e.target.checked)}
+                  className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-xs font-semibold text-slate-800">
+                  I have read and understood all the instructions above and am ready to start Paper 1.
+                </span>
+              </label>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowInstructionsModal(false)}
+                className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!hasAgreedInstructions}
+                onClick={handleStartTest}
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:pointer-events-none text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1.5"
+              >
+                <span>Start Test Paper 1</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* IN-APP MODAL 2: FINAL SUBMIT CONFIRMATION POPUP            */}
+      {/* ========================================================= */}
+      {showSubmitModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            
+            {/* Modal Header */}
+            <div className="p-6 bg-slate-50 border-b border-slate-200 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 mx-auto flex items-center justify-center font-bold mb-3 shadow-xs">
+                <AlertTriangle className="w-6 h-6 text-amber-600" />
+              </div>
+              <h3 className="text-base font-extrabold text-slate-900">
+                Confirm Test Submission
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Please review your progress before finalizing your submission.
+              </p>
+            </div>
+
+            {/* Modal Progress Summary */}
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                {/* Attempted */}
+                <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-center">
+                  <div className="text-[11px] font-bold uppercase text-blue-700">
+                    Attempted
+                  </div>
+                  <div className="text-2xl font-black text-blue-900 mt-0.5">
+                    {attemptedCount}
+                  </div>
+                  <div className="text-[10px] text-blue-600 font-medium">Questions Answered</div>
+                </div>
+
+                {/* Not Attempted */}
+                <div className="p-3.5 rounded-xl bg-slate-100 border border-slate-200 text-center">
+                  <div className="text-[11px] font-bold uppercase text-slate-600">
+                    Not Attempted
+                  </div>
+                  <div className="text-2xl font-black text-slate-800 mt-0.5">
+                    {notAttemptedCount}
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-medium">Questions Remaining</div>
+                </div>
+              </div>
+
+              {notAttemptedCount > 0 ? (
+                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2.5 text-xs text-amber-800">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="font-bold">You have {notAttemptedCount} unattempted questions.</strong>
+                    <div className="text-[11px] text-amber-700 mt-0.5">
+                      Once submitted, your answers will be automatically graded and you will not be able to modify them.
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-2.5 text-xs text-emerald-800">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="font-bold">Great job! All 43 questions answered.</strong>
+                    <div className="text-[11px] text-emerald-700 mt-0.5">
+                      Ready to view your auto-graded score and step-by-step solutions.
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer Buttons */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setShowSubmitModal(false)}
+                className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition-colors"
+              >
+                No, Keep Solving
+              </button>
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={handleConfirmSubmit}
+                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1.5 active:scale-[0.98]"
+              >
+                <Check className="w-4 h-4" />
+                <span>{isSubmitting ? 'Evaluating...' : 'Yes, Submit Test'}</span>
+              </button>
             </div>
 
           </div>

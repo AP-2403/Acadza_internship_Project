@@ -407,3 +407,4 @@ def get_professor_stats(subject: Optional[str] = None):
         "dismissed": counts.get("dismissed", 0),
         "total": sum(counts.values())
     }
+
