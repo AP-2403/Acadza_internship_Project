@@ -106,12 +106,19 @@ def apply_question_patch(question_id: str, edit: Optional[Dict[str, Any]]) -> Op
 
         q["updatedAt"] = datetime.now(timezone.utc).isoformat()
 
-        # Persist to data/questions.json
+        # Persist to data/questions.json and console/src/data/questions.json
         try:
             with open(QUESTIONS_PATH, "w", encoding="utf-8") as f:
                 json.dump(QUESTIONS_DATA, f, indent=2, ensure_ascii=False)
         except Exception as e:
             print(f"Warning: could not write questions.json: {e}")
+
+        try:
+            console_path = BASE_DIR / "console" / "src" / "data" / "questions.json"
+            with open(console_path, "w", encoding="utf-8") as f:
+                json.dump(QUESTIONS_DATA, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Warning: could not write console questions.json: {e}")
 
     return q
 
@@ -130,6 +137,21 @@ def on_startup():
         cur.execute("ALTER TABLE reports ADD COLUMN resolved_at TEXT")
     except Exception:
         pass
+
+    # Apply all approved fixes to questions bank so they are permanently reflected everywhere
+    try:
+        cur.execute("SELECT question_id, edit_json FROM reports WHERE status = 'auto_applied' AND edit_json IS NOT NULL")
+        applied_fixes = cur.fetchall()
+        for row in applied_fixes:
+            qid = row["question_id"]
+            if row["edit_json"]:
+                try:
+                    edit = json.loads(row["edit_json"])
+                    apply_question_patch(qid, edit)
+                except Exception as e:
+                    print("Error applying approved fix on startup:", e)
+    except Exception as e:
+        print("Startup patch application note:", e)
 
     # Upgrade any previous un-triaged student doubts with AI Agent proof and surgical diffs
     try:

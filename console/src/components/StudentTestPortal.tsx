@@ -63,12 +63,19 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
   // Dynamically load updated question bank (reflecting faculty approved fixes)
   const [questionsList, setQuestionsList] = useState<any[]>(questionsRaw as any[]);
 
-  useEffect(() => {
-    fetchQuestionsList().then((data) => {
+  const loadQuestions = async () => {
+    try {
+      const data = await fetchQuestionsList();
       if (data && data.length > 0) {
         setQuestionsList(data);
       }
-    });
+    } catch (e) {
+      console.warn('Failed to load questions list:', e);
+    }
+  };
+
+  useEffect(() => {
+    loadQuestions();
   }, []);
 
   const questions = questionsList;
@@ -94,6 +101,7 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
     const doubts = await fetchStudentDoubts(user.username);
     setMyDoubts(doubts);
     setIsLoadingDoubts(false);
+    loadQuestions(); // Ensure updated questions are loaded alongside doubts
   };
 
   useEffect(() => {
@@ -1050,6 +1058,15 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
                 // Check if faculty has already replied to a doubt on this question
                 const existingDoubt = myDoubts.find((d) => d.questionId === item.questionId);
 
+                // Fetch latest question details reflecting faculty approved fixes
+                const latestQ = questionsList.find((q) => q._id === item.questionId);
+                const latestQType = (latestQ && latestQ.questionType) || item.questionType || 'scq';
+                const latestPayload = latestQ ? (latestQ[latestQType] || {}) : {};
+
+                const currentQuestionText = latestPayload.question || latestQ?.questionText || item.questionText;
+                const currentSolutionText = latestPayload.solution || latestQ?.solutionText || item.solutionText;
+                const currentCorrectAnswer = (latestPayload.answer !== undefined ? String(latestPayload.answer) : null) || latestQ?.correctAnswer || item.correctAnswer;
+
                 return (
                   <div
                     key={item.questionId}
@@ -1094,7 +1111,7 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
 
                     {/* Question HTML */}
                     <div className="py-2 text-slate-900 text-sm">
-                      {renderFormattedHtml(item.questionText)}
+                      {renderFormattedHtml(currentQuestionText)}
                     </div>
 
                     {/* Answer Comparison Strip */}
@@ -1120,20 +1137,20 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
                           Official Correct Key:
                         </span>
                         <span className="font-bold text-slate-900">
-                          Option {item.correctAnswer}
+                          Option {currentCorrectAnswer}
                         </span>
                       </div>
                     </div>
 
                     {/* Solution Accordion/Section */}
-                    {item.solutionText && (
+                    {currentSolutionText && (
                       <div className="mt-4 p-4 rounded-lg bg-blue-50/50 border border-blue-100">
                         <div className="text-xs font-bold text-blue-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                           <Sparkles className="w-3.5 h-3.5 text-blue-600" />
                           <span>Detailed Step-by-Step Solution</span>
                         </div>
                         <div className="text-xs text-slate-800">
-                          {renderFormattedHtml(item.solutionText)}
+                          {renderFormattedHtml(currentSolutionText)}
                         </div>
                       </div>
                     )}
