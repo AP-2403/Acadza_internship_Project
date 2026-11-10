@@ -5,9 +5,11 @@
 @layer base {
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #f8fafc;
+    color: #0f172a;
   }
   
-  /* Native MathML styling for crisp display */
+  /* Native MathML styling for crisp display in Light Mode */
   math {
     font-family: 'Cambria Math', 'Latin Modern Math', 'STIX Two Math', 'Times New Roman', serif;
     font-size: 1.05em;
@@ -15,6 +17,7 @@
     display: inline-block;
     vertical-align: middle;
     padding: 0 2px;
+    color: #0f172a;
   }
 
   math[display="block"] {
@@ -29,27 +32,28 @@
     font-size: 1rem;
     line-height: 1.6;
     font-weight: 500;
+    color: #0f172a;
   }
 
   .question-rendered p {
     margin-bottom: 0.5rem;
     line-height: 1.6;
+    color: #1e293b;
   }
 }
 
-/* Custom scrollbars */
+/* Custom scrollbars for light theme */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(241, 245, 249, 0.8);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(51, 65, 85, 0.8);
+  background: rgba(203, 213, 225, 0.9);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 1);
+  background: rgba(148, 163, 184, 1);
 }
-

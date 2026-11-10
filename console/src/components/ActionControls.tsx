@@ -3,9 +3,7 @@ import {
   Check, 
   X, 
   Edit, 
-  ShieldAlert, 
-  Send,
-  CornerDownLeft
+  ShieldAlert
 } from 'lucide-react';
 import { QuestionGroup, EditProposal } from '../types';
 
@@ -49,12 +47,12 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
   };
 
   return (
-    <div className="border-t border-slate-800 bg-slate-900/90 p-4">
+    <div className="border-t border-slate-200 bg-white p-4 shadow-xs">
       <div className="flex flex-wrap items-center justify-between gap-3">
         
         {/* Helper hint */}
-        <div className="text-[11px] text-slate-400 hidden sm:block">
-          Keyboard shortcuts active: <kbd className="px-1 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px] text-slate-300">A</kbd> Approve • <kbd className="px-1 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px] text-slate-300">E</kbd> Edit • <kbd className="px-1 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px] text-slate-300">R</kbd> Reject
+        <div className="text-[11px] text-slate-500 hidden sm:block">
+          Keyboard shortcuts active: <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-300 font-mono text-[10px] text-slate-700">A</kbd> Approve • <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-300 font-mono text-[10px] text-slate-700">E</kbd> Edit • <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-300 font-mono text-[10px] text-slate-700">R</kbd> Reject
         </div>
 
         {/* Action Button Group */}
@@ -63,7 +61,7 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
           {/* Reject Button */}
           <button
             onClick={() => setShowRejectModal(true)}
-            className="flex items-center space-x-1.5 rounded-lg border border-red-500/40 bg-red-950/30 px-3.5 py-2 text-xs font-semibold text-red-300 transition-colors hover:bg-red-900/50 hover:text-red-100"
+            className="flex items-center space-x-1.5 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100 hover:text-red-800"
             title="Reject report / Mark no change (Key: R)"
           >
             <X className="h-4 w-4" />
@@ -78,7 +76,7 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
               setEditReplace(currentEdit?.replace || '');
               setShowEditModal(true);
             }}
-            className="flex items-center space-x-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-semibold text-slate-200 transition-colors hover:bg-slate-700 hover:text-white"
+            className="flex items-center space-x-1.5 rounded-lg border border-slate-300 bg-slate-100 px-3.5 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-200 hover:text-slate-900"
             title="Edit proposal manually before approving (Key: E)"
           >
             <Edit className="h-4 w-4" />
@@ -88,7 +86,7 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
           {/* Approve Button */}
           <button
             onClick={() => onApprove('Approved as recommended by AI triage')}
-            className="flex items-center space-x-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-500 hover:scale-[1.02]"
+            className="flex items-center space-x-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm shadow-emerald-600/30 transition-all hover:bg-emerald-500 hover:scale-[1.02]"
             title="Approve recommendation and dispatch fix (Key: A)"
           >
             <Check className="h-4 w-4" />
@@ -101,20 +99,20 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
 
       {/* Edit & Approve Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-xl border border-slate-700 bg-slate-900 p-5 shadow-2xl">
-            <h3 className="text-sm font-bold text-white mb-3 flex items-center space-x-2">
-              <Edit className="h-4 w-4 text-blue-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-2xl">
+            <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2">
+              <Edit className="h-4 w-4 text-blue-600" />
               <span>Modify Surgical Replacement</span>
             </h3>
 
             <form onSubmit={handleCustomSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-400 mb-1">Target Field:</label>
+                <label className="block text-slate-600 mb-1 font-medium">Target Field:</label>
                 <select
                   value={editField}
                   onChange={(e) => setEditField(e.target.value)}
-                  className="w-full rounded bg-slate-800 p-2 text-slate-200 border border-slate-700"
+                  className="w-full rounded-lg bg-slate-50 p-2 text-slate-800 border border-slate-300 focus:outline-none focus:border-blue-500"
                 >
                   <option value="answer">answer (Key)</option>
                   <option value="question">question (Stem/Options HTML)</option>
@@ -124,46 +122,46 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1">Exact String to Find:</label>
+                <label className="block text-slate-600 mb-1 font-medium">Exact String to Find:</label>
                 <textarea
                   value={editFind}
                   onChange={(e) => setEditFind(e.target.value)}
                   rows={2}
-                  className="w-full rounded bg-slate-950 p-2 text-slate-200 font-mono border border-slate-700"
+                  className="w-full rounded-lg bg-slate-50 p-2 text-slate-900 font-mono border border-slate-300 focus:outline-none focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1">Replacement String:</label>
+                <label className="block text-slate-600 mb-1 font-medium">Replacement String:</label>
                 <textarea
                   value={editReplace}
                   onChange={(e) => setEditReplace(e.target.value)}
                   rows={2}
-                  className="w-full rounded bg-slate-950 p-2 text-slate-200 font-mono border border-slate-700"
+                  className="w-full rounded-lg bg-slate-50 p-2 text-slate-900 font-mono border border-slate-300 focus:outline-none focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1">Audit Note:</label>
+                <label className="block text-slate-600 mb-1 font-medium">Audit Note:</label>
                 <input
                   type="text"
                   value={editComment}
                   onChange={(e) => setEditComment(e.target.value)}
-                  className="w-full rounded bg-slate-800 p-2 text-slate-200 border border-slate-700"
+                  className="w-full rounded-lg bg-slate-50 p-2 text-slate-800 border border-slate-300 focus:outline-none focus:border-blue-500"
                 />
               </div>
 
-              <div className="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+              <div className="flex justify-end space-x-2 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="px-3 py-1.5 rounded bg-slate-800 text-slate-400 hover:text-white"
+                  className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded bg-blue-600 font-semibold text-white hover:bg-blue-500"
+                  className="px-4 py-1.5 rounded-lg bg-blue-600 font-bold text-white hover:bg-blue-500"
                 >
                   Save & Approve
                 </button>
@@ -175,20 +173,20 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
 
       {/* Reject Modal */}
       {showRejectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-xl border border-slate-700 bg-slate-900 p-5 shadow-2xl">
-            <h3 className="text-sm font-bold text-white mb-3 flex items-center space-x-2">
-              <ShieldAlert className="h-4 w-4 text-red-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-2xl">
+            <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center space-x-2">
+              <ShieldAlert className="h-4 w-4 text-red-600" />
               <span>Confirm Dismissal / Rejection</span>
             </h3>
 
             <form onSubmit={handleRejectSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-400 mb-1">Select Reason:</label>
+                <label className="block text-slate-600 mb-1 font-medium">Select Reason:</label>
                 <select
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
-                  className="w-full rounded bg-slate-800 p-2 text-slate-200 border border-slate-700"
+                  className="w-full rounded-lg bg-slate-50 p-2 text-slate-800 border border-slate-300 focus:outline-none focus:border-blue-500"
                 >
                   <option value="Student misread or miscalculated question">Student misread or miscalculated question</option>
                   <option value="Question and answer key verified correct">Question and answer key verified correct</option>
@@ -198,21 +196,21 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
                 </select>
               </div>
 
-              <p className="text-slate-400 text-[11px] leading-relaxed">
-                This will record a <span className="font-semibold text-slate-200">no_change</span> audit entry and archive this report from the active queue.
+              <p className="text-slate-500 text-[11px] leading-relaxed">
+                This will record a <span className="font-semibold text-slate-800">no_change</span> audit entry and archive this report from the active queue.
               </p>
 
-              <div className="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+              <div className="flex justify-end space-x-2 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setShowRejectModal(false)}
-                  className="px-3 py-1.5 rounded bg-slate-800 text-slate-400 hover:text-white"
+                  className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded bg-red-600 font-semibold text-white hover:bg-red-500"
+                  className="px-4 py-1.5 rounded-lg bg-red-600 font-bold text-white hover:bg-red-500"
                 >
                   Confirm Reject
                 </button>
@@ -225,4 +223,3 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
     </div>
   );
 };
-

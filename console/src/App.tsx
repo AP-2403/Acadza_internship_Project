@@ -18,7 +18,6 @@ import reportsRaw from './data/reports.json';
 import resultsRaw from './data/results.json';
 
 export const App: React.FC = () => {
-  const [darkMode, setDarkMode] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -73,6 +72,11 @@ export const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('acadza_audit_log', JSON.stringify(auditEntries));
   }, [auditEntries]);
+
+  // Ensure document is in light mode
+  useEffect(() => {
+    document.documentElement.classList.remove('dark');
+  }, []);
 
   // Stats calculation
   const stats = useMemo(() => {
@@ -227,12 +231,10 @@ export const App: React.FC = () => {
   }, [groups, selectedGroupId]);
 
   return (
-    <div className={`min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans ${darkMode ? 'dark' : ''}`}>
+    <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans">
       
       {/* Top Navigation */}
       <Navbar
-        darkMode={darkMode}
-        setDarkMode={setDarkMode}
         onOpenAudit={() => setIsAuditOpen(true)}
         onOpenShortcuts={() => setIsShortcutsOpen(true)}
         onOpenBonus={() => setIsBonusOpen(true)}
@@ -254,7 +256,7 @@ export const App: React.FC = () => {
         />
 
         {/* Center / Right: Question Review Workspace */}
-        <main className="flex-1 flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
+        <main className="flex-1 flex flex-col h-[calc(100vh-4rem)] overflow-hidden bg-white">
           {currentGroup ? (
             <div className="flex-1 flex flex-col h-full overflow-hidden">
               
@@ -264,10 +266,10 @@ export const App: React.FC = () => {
               </div>
 
               {/* Bottom Pane: Diff + Student Reply + Actions */}
-              <div className="shrink-0 bg-slate-900/90 border-t border-slate-800">
+              <div className="shrink-0 bg-white border-t border-slate-200">
                 <DiffViewer result={currentGroup.primaryResult} />
                 
-                <div className="p-4 pt-0">
+                <div className="p-4 pt-2">
                   <StudentReplyCard
                     reply={currentGroup.primaryResult.student_reply}
                     onUpdateReply={handleUpdateStudentReply}
@@ -284,7 +286,7 @@ export const App: React.FC = () => {
 
             </div>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-slate-500 text-sm">
+            <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">
               Select a question from the queue to start reviewing.
             </div>
           )}
@@ -316,4 +318,3 @@ export const App: React.FC = () => {
 };
 
 export default App;
-
