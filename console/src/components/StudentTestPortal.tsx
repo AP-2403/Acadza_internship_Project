@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   GraduationCap,
   Clock,
@@ -18,10 +18,13 @@ import {
   BookOpen,
   FileText,
   Check,
-  AlertCircle
+  AlertCircle,
+  MessageSquare,
+  ShieldCheck,
+  CheckCheck
 } from 'lucide-react';
-import { User, QuestionTestResult, TestStats } from '../types';
-import { submitStudentTest, submitStudentDoubt } from '../lib/api';
+import { User, QuestionTestResult, TestStats, StudentDoubtItem } from '../types';
+import { submitStudentTest, submitStudentDoubt, fetchStudentDoubts } from '../lib/api';
 import questionsRaw from '../data/questions.json';
 
 interface StudentTestPortalProps {
@@ -30,8 +33,8 @@ interface StudentTestPortalProps {
 }
 
 export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLogout }) => {
-  // Navigation phases: 'library' (dashboard), 'solving' (taking test), 'results' (review & doubts)
-  const [phase, setPhase] = useState<'library' | 'solving' | 'results'>('library');
+  // Navigation phases: 'library' (dashboard), 'solving' (taking test), 'results' (review & doubts), 'doubts' (faculty responses)
+  const [phase, setPhase] = useState<'library' | 'solving' | 'results' | 'doubts'>('library');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,6 +55,10 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
   const [submittedFeedbacks, setSubmittedFeedbacks] = useState<Record<string, { reportId: string; message: string }>>({});
   const [submittingFeedbackId, setSubmittingFeedbackId] = useState<string | null>(null);
 
+  // Student Doubts & Faculty Responses state
+  const [myDoubts, setMyDoubts] = useState<StudentDoubtItem[]>([]);
+  const [isLoadingDoubts, setIsLoadingDoubts] = useState(false);
+
   const questions = useMemo(() => questionsRaw as any[], []);
 
   // Filtered solving questions by subject
@@ -68,6 +75,20 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
   // Calculate attempted vs not attempted counts
   const attemptedCount = useMemo(() => Object.keys(answers).length, [answers]);
   const notAttemptedCount = useMemo(() => questions.length - attemptedCount, [questions.length, attemptedCount]);
+
+  // Load student doubts & faculty responses
+  const loadDoubts = async () => {
+    setIsLoadingDoubts(true);
+    const doubts = await fetchStudentDoubts(user.username);
+    setMyDoubts(doubts);
+    setIsLoadingDoubts(false);
+  };
+
+  useEffect(() => {
+    loadDoubts();
+    const interval = setInterval(loadDoubts, 6000);
+    return () => clearInterval(interval);
+  }, [user.username]);
 
   // Handle option selection
   const handleSelectOption = (qid: string, option: string) => {
@@ -124,6 +145,7 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
         [qid]: { reportId: res.reportId, message: res.message }
       }));
       setFeedbackTexts((prev) => ({ ...prev, [qid]: '' }));
+      loadDoubts(); // Refresh doubts list
     }
   };
 
@@ -169,12 +191,43 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
         </div>
 
         <div className="flex items-center gap-3">
-          {phase === 'library' && (
-            <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg">
-              <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+          
+          {/* Main Navigation Tabs */}
+          <div className="hidden md:flex items-center gap-1 p-1 bg-slate-100 rounded-xl">
+            <button
+              type="button"
+              onClick={() => setPhase('library')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors ${
+                phase === 'library'
+                  ? 'bg-white text-blue-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
               <span>Test Library</span>
-            </div>
-          )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                loadDoubts();
+                setPhase('doubts');
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors ${
+                phase === 'doubts'
+                  ? 'bg-white text-indigo-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>My Doubts & Faculty Responses</span>
+              {myDoubts.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-extrabold">
+                  {myDoubts.length}
+                </span>
+              )}
+            </button>
+          </div>
 
           {phase === 'solving' && (
             <div className="flex items-center gap-3">
@@ -320,7 +373,7 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
                       <div className="text-xs font-bold text-slate-700">+4 / -1 / 0</div>
                     </div>
                     <div>
-                      <div className="text-[11px] text-slate-400 font-semibold uppercase">Faculty Routing</div>
+                      <div className="text-[11px] text-slate-400 font-semibold uppercase">Faculty Replies</div>
                       <div className="text-xs font-bold text-indigo-600">Active Live</div>
                     </div>
                   </div>
@@ -369,6 +422,214 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
             )}
 
           </div>
+
+        </main>
+      )}
+
+      {/* ========================================================= */}
+      {/* PHASE 3: MY DOUBTS & FACULTY RESPONSES                    */}
+      {/* ========================================================= */}
+      {phase === 'doubts' && (
+        <main className="flex-1 p-6 md:p-8 max-w-5xl mx-auto w-full space-y-6">
+          
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2">
+                <MessageSquare className="w-6 h-6 text-indigo-600" />
+                <span>My Doubts & Faculty Responses</span>
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Every doubt you submit during test review is reviewed by your subject professor. See their explanations and question corrections below.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={loadDoubts}
+              className="self-start sm:self-auto px-3.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg text-xs font-semibold text-slate-700 flex items-center gap-1.5 shadow-xs transition-colors"
+            >
+              <RotateCcw className={`w-3.5 h-3.5 ${isLoadingDoubts ? 'animate-spin' : ''}`} />
+              <span>Refresh Responses</span>
+            </button>
+          </div>
+
+          {/* Stats Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                Total Doubts Reported
+              </span>
+              <div className="text-2xl font-black text-slate-800 mt-1">
+                {myDoubts.length}
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 shadow-xs">
+              <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider block flex items-center gap-1">
+                <CheckCheck className="w-3.5 h-3.5" />
+                <span>Corrections Made (Student Correct)</span>
+              </span>
+              <div className="text-2xl font-black text-emerald-900 mt-1">
+                {myDoubts.filter((d) => d.isCorrected).length}
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 shadow-xs">
+              <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider block flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Concept Clarifications</span>
+              </span>
+              <div className="text-2xl font-black text-blue-900 mt-1">
+                {myDoubts.filter((d) => d.verdict === 'concept_clarified').length}
+              </div>
+            </div>
+          </div>
+
+          {/* List of Doubts */}
+          {myDoubts.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+              <MessageSquarePlus className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+              <h3 className="text-base font-bold text-slate-700">No Doubts Submitted Yet</h3>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1">
+                When you solve a test and report a mistake or ask a doubt under any question, the faculty's explanations and verification feedback will appear right here.
+              </p>
+              <button
+                type="button"
+                onClick={() => setPhase('library')}
+                className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all"
+              >
+                Go to Test Library
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {myDoubts.map((doubt) => {
+                const isCorrected = doubt.isCorrected;
+                const isClarified = doubt.verdict === 'concept_clarified';
+                const isPending = doubt.status === 'pending';
+
+                return (
+                  <div
+                    key={doubt.reportId}
+                    className={`bg-white rounded-2xl border p-6 shadow-sm space-y-4 ${
+                      isCorrected
+                        ? 'border-emerald-300 border-l-4 border-l-emerald-500'
+                        : isClarified
+                        ? 'border-blue-300 border-l-4 border-l-blue-500'
+                        : 'border-slate-200 border-l-4 border-l-amber-400'
+                    }`}
+                  >
+                    {/* Header */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                          {doubt.subject}
+                        </span>
+                        {doubt.questionDetails?.chapter && (
+                          <span className="text-xs font-medium text-slate-600">
+                            {doubt.questionDetails.chapter}
+                          </span>
+                        )}
+                        <span className="text-[10px] font-mono text-slate-400">
+                          ID: {doubt.questionId.slice(0, 8)}...
+                        </span>
+                      </div>
+
+                      {/* Status Badge */}
+                      <div>
+                        {isCorrected && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
+                            <CheckCheck className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Correction Verified & Applied</span>
+                          </span>
+                        )}
+                        {isClarified && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold">
+                            <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                            <span>Concept Clarified by Faculty</span>
+                          </span>
+                        )}
+                        {isPending && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">
+                            <Clock className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Awaiting Faculty Review</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Question Snippet if available */}
+                    {doubt.questionDetails?.questionText && (
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 max-h-24 overflow-y-auto">
+                        <div className="font-semibold text-slate-400 text-[10px] uppercase mb-1">
+                          Question Reference:
+                        </div>
+                        {renderFormattedHtml(doubt.questionDetails.questionText)}
+                      </div>
+                    )}
+
+                    {/* Student's reported doubt */}
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                      <div className="font-semibold text-slate-500 text-[10px] uppercase tracking-wider mb-1">
+                        Your Reported Doubt:
+                      </div>
+                      <p className="text-slate-900 font-medium italic">
+                        "{doubt.studentComment}"
+                      </p>
+                    </div>
+
+                    {/* Faculty Explanation Card */}
+                    <div
+                      className={`p-4 rounded-xl border ${
+                        isCorrected
+                          ? 'bg-emerald-50/70 border-emerald-200'
+                          : isClarified
+                          ? 'bg-blue-50/70 border-blue-200'
+                          : 'bg-amber-50/50 border-amber-200'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] text-white ${
+                              isCorrected ? 'bg-emerald-600' : isClarified ? 'bg-blue-600' : 'bg-amber-600'
+                            }`}
+                          >
+                            👨‍🏫
+                          </div>
+                          <div>
+                            <div className="text-xs font-bold text-slate-900">
+                              {doubt.facultyName}
+                            </div>
+                            <div className="text-[10px] text-slate-500">
+                              {doubt.subject} Department
+                            </div>
+                          </div>
+                        </div>
+
+                        {doubt.resolvedAt && (
+                          <span className="text-[10px] text-slate-400">
+                            {new Date(doubt.resolvedAt).toLocaleTimeString()}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="text-xs text-slate-800 leading-relaxed pt-1">
+                        {isCorrected && (
+                          <div className="font-bold text-emerald-800 mb-1 flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>You were correct!</span>
+                          </div>
+                        )}
+                        <p>{doubt.studentReply}</p>
+                      </div>
+                    </div>
+
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
         </main>
       )}
@@ -779,6 +1040,8 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
                   : 'bg-slate-100 text-slate-700';
 
                 const feedbackSubmitted = submittedFeedbacks[item.questionId];
+                // Check if faculty has already replied to a doubt on this question
+                const existingDoubt = myDoubts.find((d) => d.questionId === item.questionId);
 
                 return (
                   <div
@@ -865,6 +1128,39 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
                         <div className="text-xs text-slate-800">
                           {renderFormattedHtml(item.solutionText)}
                         </div>
+                      </div>
+                    )}
+
+                    {/* Existing Faculty Response if already replied */}
+                    {existingDoubt && existingDoubt.studentReply && (
+                      <div
+                        className={`mt-4 p-4 rounded-xl border ${
+                          existingDoubt.isCorrected
+                            ? 'bg-emerald-50 border-emerald-200'
+                            : existingDoubt.verdict === 'concept_clarified'
+                            ? 'bg-blue-50 border-blue-200'
+                            : 'bg-slate-50 border-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-900">
+                              💬 Response from {existingDoubt.facultyName}:
+                            </span>
+                          </div>
+                          {existingDoubt.isCorrected ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-800">
+                              Correction Made & Verified
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-200 text-blue-800">
+                              Concept Explanation
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-800 leading-relaxed font-medium">
+                          {existingDoubt.studentReply}
+                        </p>
                       </div>
                     )}
 
@@ -1014,7 +1310,7 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
                     <strong>Integer Questions:</strong> Type the exact numerical integer value in the input field.
                   </li>
                   <li>
-                    <strong>Post-Test Review & Doubt Submission:</strong> After submitting, each question will be marked 🟢 Green (Correct), 🔴 Red (Wrong), or ⚪ Grey (Unattempted). You can write questions or doubts directly under each question to alert the subject faculty.
+                    <strong>Post-Test Review & Doubt Submission:</strong> After submitting, each question will be marked 🟢 Green (Correct), 🔴 Red (Wrong), or ⚪ Grey (Unattempted). You can write questions or doubts directly under each question to alert the subject faculty, and see their explanations in "My Doubts".
                   </li>
                 </ul>
               </div>

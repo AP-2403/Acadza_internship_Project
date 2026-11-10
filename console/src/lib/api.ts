@@ -1,9 +1,8 @@
-import { User, QuestionTestResult, TestStats, LiveDoubt } from '../types';
+import { User, QuestionTestResult, TestStats, LiveDoubt, StudentDoubtItem } from '../types';
 import questionsRaw from '../data/questions.json';
 
 const API_BASE = 'http://localhost:8000/api';
 
-// Helper to determine if backend is reachable
 async function isBackendOnline(): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/health`, { method: 'GET', signal: AbortSignal.timeout(1200) });
@@ -31,7 +30,7 @@ export async function loginUser(username: string, password: string): Promise<{ s
     console.warn('Backend login error, falling back to local auth', err);
   }
 
-  // Local fallback for guest accounts if backend is not started or offline
+  // Local fallback for guest accounts
   const GUESTS: Record<string, { pwd: string; name: string; role: 'student' | 'professor' | 'admin'; subject: string | null }> = {
     student: { pwd: 'guest123', name: 'Aarav Sharma (JEE Aspirant)', role: 'student', subject: null },
     physics_prof: { pwd: 'guest123', name: 'Prof. H. C. Verma', role: 'professor', subject: 'Physics' },
@@ -78,7 +77,6 @@ export async function submitStudentTest(
     console.warn('Backend scoring error, falling back to client-side evaluation', err);
   }
 
-  // Standalone client-side evaluation fallback
   const qs = questionsRaw as any[];
   let correct = 0;
   let incorrect = 0;
@@ -155,12 +153,10 @@ export async function submitStudentDoubt(
     console.warn('Backend feedback submission error, saving locally', err);
   }
 
-  // Fallback to localStorage sync
   const newId = `R_LOCAL_${Date.now()}`;
   const saved = localStorage.getItem('acadza_student_doubts');
   const doubts: LiveDoubt[] = saved ? JSON.parse(saved) : [];
   
-  // Find question subject
   const q = (questionsRaw as any[]).find(x => x._id === questionId);
   const subj = q ? q.subject : 'Physics';
 
@@ -199,7 +195,10 @@ export async function fetchLiveDoubts(subject: string | null): Promise<LiveDoubt
           subject: r.subject,
           comment: r.comment,
           status: r.status,
-          reportedAt: r.reportedAt
+          reportedAt: r.reportedAt,
+          verdict: r.verdict,
+          studentReply: r.student_reply,
+          facultyName: r.facultyName
         }));
       }
     }
@@ -215,3 +214,87 @@ export async function fetchLiveDoubts(subject: string | null): Promise<LiveDoubt
   return doubts;
 }
 
+export async function fetchStudentDoubts(studentId: string = 'student'): Promise<StudentDoubtItem[]> {
+  try {
+    const online = await isBackendOnline();
+    if (online) {
+      const res = await fetch(`${API_BASE}/student/my-doubts?studentId=${encodeURIComponent(studentId)}`);
+      if (res.ok) {
+        const data = await res.json();
+        return data.doubts || [];
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to fetch student doubts from backend', err);
+  }
+
+  // Local fallback
+  const saved = localStorage.getItem('acadza_student_doubts');
+  const doubts: LiveDoubt[] = saved ? JSON.parse(saved) : [];
+  return doubts.map((d) => {
+    const q = (questionsRaw as any[]).find(x => x._id === d.questionId);
+    const qDetails = q ? q[q.questionType] : null;
+    return {
+      reportId: d.reportId,
+      questionId: d.questionId,
+      subject: d.subject,
+      studentComment: d.comment,
+      status: d.status,
+      verdict: d.verdict || 'pending_review',
+      isResolved: d.status !== 'pending',
+      isCorrected: d.status === 'auto_applied',
+      studentReply: d.studentReply || 'Your doubt has been submitted and is currently being evaluated by the subject faculty.',
+      facultyName: d.facultyName || `Prof. (${d.subject} Dept)`,
+      reportedAt: d.reportedAt,
+      questionDetails: qDetails ? {
+        questionText: qDetails.question || '',
+        chapter: q.chapter || '',
+        correctAnswer: String(qDetails.answer || '')
+      } : undefined
+    };
+  });
+}
+
+export async function sendProfessorReply(
+  reportId: string,
+  replyText: string,
+  verdict: 'error_verified' | 'concept_clarified',
+  facultyName: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const online = await isBackendOnline();
+    if (online) {
+      const res = await fetch(`${API_BASE}/professor/reply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reportId, replyText, verdict, facultyName })
+      });
+      if (res.ok) {
+        return { success: true, message: 'Response sent back to student!' };
+      }
+    }
+  } catch (err) {
+    console.warn('Backend reply error, saving locally', err);
+  }
+
+  // Local fallback
+  const saved = localStorage.getItem('acadza_student_doubts');
+  if (saved) {
+    const doubts: LiveDoubt[] = JSON.parse(saved);
+    const updated = doubts.map(d => {
+      if (d.reportId === reportId) {
+        return {
+          ...d,
+          status: (verdict === 'error_verified' ? 'auto_applied' : 'reviewed') as any,
+          verdict,
+          studentReply: replyText,
+          facultyName
+        };
+      }
+      return d;
+    });
+    localStorage.setItem('acadza_student_doubts', JSON.stringify(updated));
+  }
+
+  return { success: true, message: 'Response saved locally!' };
+}

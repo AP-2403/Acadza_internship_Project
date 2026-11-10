@@ -119,4 +119,27 @@ export interface LiveDoubt {
   comment: string;
   status: 'pending' | 'reviewed' | 'auto_applied' | 'dismissed';
   reportedAt: string;
+  verdict?: string;
+  studentReply?: string;
+  facultyName?: string;
+}
+
+export interface StudentDoubtItem {
+  reportId: string;
+  questionId: string;
+  subject: string;
+  studentComment: string;
+  status: string;
+  verdict: string;
+  isResolved: boolean;
+  isCorrected: boolean;
+  studentReply: string;
+  facultyName: string;
+  reportedAt: string;
+  resolvedAt?: string;
+  questionDetails?: {
+    questionText: string;
+    chapter: string;
+    correctAnswer: string;
+  };
 }

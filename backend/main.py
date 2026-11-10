@@ -14,7 +14,7 @@ from .auth import create_token, store_session, get_current_user, remove_session
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 
-app = FastAPI(title="Acadza AI Faculty & Student Assessment Platform", version="2.0.0")
+app = FastAPI(title="Acadza AI Faculty & Student Assessment Platform", version="2.1.0")
 
 # Enable CORS for local dev and preview
 app.add_middleware(
@@ -31,10 +31,23 @@ with open(QUESTIONS_PATH, "r", encoding="utf-8") as f:
     QUESTIONS_DATA: List[Dict[str, Any]] = json.load(f)
 QUESTIONS_MAP: Dict[str, Dict[str, Any]] = {q["_id"]: q for q in QUESTIONS_DATA}
 
-# Ensure DB is initialized on startup
+# Ensure DB is initialized on startup and ensure columns exist
 @app.on_event("startup")
 def on_startup():
     init_db()
+    conn = get_conn()
+    cur = conn.cursor()
+    # Add faculty_name and resolved_at columns if not present
+    try:
+        cur.execute("ALTER TABLE reports ADD COLUMN faculty_name TEXT")
+    except Exception:
+        pass
+    try:
+        cur.execute("ALTER TABLE reports ADD COLUMN resolved_at TEXT")
+    except Exception:
+        pass
+    conn.commit()
+    conn.close()
 
 # --- Request / Response Models ---
 class LoginRequest(BaseModel):
@@ -43,7 +56,7 @@ class LoginRequest(BaseModel):
 
 class SubmitTestRequest(BaseModel):
     student_username: Optional[str] = "student"
-    answers: Dict[str, Any]  # { question_id: "A" or 4800 or ["A","B"] }
+    answers: Dict[str, Any]
 
 class StudentFeedbackRequest(BaseModel):
     questionId: str
@@ -56,7 +69,14 @@ class ProfessorActionRequest(BaseModel):
     action: str  # 'approve', 'reject', 'mark_reviewed'
     comment: Optional[str] = None
 
-# --- Helper to extract correct answer & text ---
+class ProfessorReplyRequest(BaseModel):
+    reportId: str
+    replyText: str
+    verdict: str  # 'error_verified' (student was correct) or 'concept_clarified' (question is sound)
+    facultyName: Optional[str] = "Faculty Lead"
+    action: Optional[str] = "reply"
+
+# --- Helper to extract question details ---
 def extract_question_details(q: Dict[str, Any]):
     q_type = q.get("questionType", "scq")
     data = q.get(q_type, {})
@@ -65,7 +85,6 @@ def extract_question_details(q: Dict[str, Any]):
     solution_text = data.get("solution", "")
     raw_answer = data.get("answer", "")
     
-    # Normalize correct answer string representation
     if isinstance(raw_answer, list):
         correct_str = ", ".join(str(x).strip(" '\"") for x in raw_answer if x)
     else:
@@ -87,7 +106,7 @@ def extract_question_details(q: Dict[str, Any]):
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "ok", "service": "Acadza Assessment & Faculty Triage API"}
+    return {"status": "ok", "service": "Acadza Assessment & Faculty Triage API", "version": "2.1.0"}
 
 @app.post("/api/auth/login")
 def login(req: LoginRequest):
@@ -137,9 +156,6 @@ def logout(authorization: Optional[str] = Header(None)):
 
 @app.get("/api/questions")
 def get_questions(subject: Optional[str] = None):
-    """
-    Returns questions. Can be filtered by subject (Physics, Zoology, Botany).
-    """
     items = []
     for q in QUESTIONS_DATA:
         q_subj = q.get("subject", "Physics")
@@ -154,18 +170,12 @@ def get_questions(subject: Optional[str] = None):
             "questionType": details["type"],
             "questionText": details["questionText"],
             "quesImages": details["quesImages"],
-            # Answer omitted in clean question paper view, or included if needed:
             "hasSolution": bool(details["solutionText"])
         })
     return {"total": len(items), "questions": items}
 
 @app.post("/api/student/submit-test")
 def submit_test(req: SubmitTestRequest):
-    """
-    Evaluates student's answers against ground-truth keys.
-    Computes Green (correct), Red (wrong), Grey (unattempted).
-    Stores test session and answer records in SQLite.
-    """
     answers = req.answers or {}
     total = len(QUESTIONS_DATA)
     attempted = 0
@@ -184,14 +194,12 @@ def submit_test(req: SubmitTestRequest):
         correct_ans = details["correctAnswer"]
         student_ans = answers.get(qid)
 
-        # Normalize comparison
         if student_ans is None or str(student_ans).strip() == "":
             status = "unattempted"
             student_ans_str = None
         else:
             attempted += 1
             student_ans_str = str(student_ans).strip()
-            # Normalize for MCQ / case insensitive comparison
             c_norm = correct_ans.upper().replace(" ", "").replace(",", "")
             s_norm = student_ans_str.upper().replace(" ", "").replace(",", "")
             
@@ -202,7 +210,6 @@ def submit_test(req: SubmitTestRequest):
                 status = "wrong"
                 incorrect_count += 1
 
-        # Save to student_answers
         cur.execute("""
             INSERT INTO student_answers (session_id, question_id, student_answer, correct_answer, status)
             VALUES (?, ?, ?, ?, ?)
@@ -219,12 +226,11 @@ def submit_test(req: SubmitTestRequest):
             "solutionImages": details["solutionImages"],
             "correctAnswer": correct_ans,
             "studentAnswer": student_ans_str,
-            "status": status  # 'correct' (green), 'wrong' (red), 'unattempted' (grey)
+            "status": status
         })
 
     score_percent = round((correct_count / total * 100), 1) if total > 0 else 0.0
 
-    # Save to test_sessions
     cur.execute("""
         INSERT INTO test_sessions (
             id, student_username, total_questions, attempted, correct, incorrect, score_percent, submitted_at
@@ -258,10 +264,6 @@ def submit_test(req: SubmitTestRequest):
 
 @app.post("/api/student/submit-feedback")
 def submit_feedback(req: StudentFeedbackRequest):
-    """
-    Captures per-question doubt/feedback from student.
-    Persists as a new report in the database, automatically categorized by the question's subject.
-    """
     if not req.comment or not req.comment.strip():
         raise HTTPException(status_code=400, detail="Comment cannot be empty")
 
@@ -280,25 +282,27 @@ def submit_feedback(req: StudentFeedbackRequest):
         INSERT INTO reports (
             report_id, question_id, student_id, subject, comment, source,
             status, route, verdict, repair, edit_json, confidence,
-            evidence, student_reply, reported_at, session_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            evidence, student_reply, reported_at, session_id, faculty_name, resolved_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         report_id,
         req.questionId,
-        req.studentId or "student_web",
+        req.studentId or "student",
         subj,
         req.comment.strip(),
         "student_test_portal",
         "pending",
         "faculty_review",
-        "reported_doubt",
+        "pending_review",
         "question_inquiry",
         None,
         0.85,
         "Direct doubt submitted during test review.",
-        "Thank you for reporting this doubt. The subject faculty has received it and is reviewing the question.",
+        "Your doubt has been received by the " + subj + " faculty and is currently being reviewed.",
         now_iso,
-        req.sessionId
+        req.sessionId,
+        None,
+        None
     ))
 
     conn.commit()
@@ -311,13 +315,95 @@ def submit_feedback(req: StudentFeedbackRequest):
         "message": f"Doubt successfully routed to {subj} faculty queue!"
     }
 
+@app.get("/api/student/my-doubts")
+def get_student_doubts(studentId: Optional[str] = "student"):
+    """
+    Returns all doubts and faculty responses for the student.
+    Includes verification verdict, faculty explanation, and question details.
+    """
+    conn = get_conn()
+    cur = conn.cursor()
+
+    # Fetch reports for this student or web portal doubts
+    cur.execute("""
+        SELECT * FROM reports 
+        WHERE student_id = ? OR source = 'student_test_portal'
+        ORDER BY reported_at DESC
+    """, (studentId,))
+    rows = cur.fetchall()
+    conn.close()
+
+    doubts_list = []
+    for r in rows:
+        qid = r["question_id"]
+        q_obj = QUESTIONS_MAP.get(qid)
+        q_details = extract_question_details(q_obj) if q_obj else None
+
+        # Determine response status
+        is_resolved = r["status"] in ("reviewed", "auto_applied", "dismissed")
+        is_corrected = r["status"] == "auto_applied" or r["verdict"] in ("error", "error_verified", "student_correct")
+        
+        doubts_list.append({
+            "reportId": r["report_id"],
+            "questionId": qid,
+            "subject": r["subject"],
+            "studentComment": r["comment"],
+            "status": r["status"],
+            "verdict": r["verdict"],
+            "isResolved": is_resolved,
+            "isCorrected": is_corrected,
+            "studentReply": r["student_reply"],
+            "facultyName": r["faculty_name"] or f"Prof. ({r['subject']} Dept)",
+            "reportedAt": r["reported_at"],
+            "resolvedAt": r["resolved_at"],
+            "questionDetails": {
+                "questionText": q_details["questionText"] if q_details else "",
+                "chapter": q_details["chapter"] if q_details else "",
+                "correctAnswer": q_details["correctAnswer"] if q_details else "",
+            } if q_details else None
+        })
+
+    return {"count": len(doubts_list), "doubts": doubts_list}
+
+@app.post("/api/professor/reply")
+def reply_to_student(req: ProfessorReplyRequest):
+    """
+    Faculty responds back to the student explaining:
+    1. If student was correct: "You were right, correction has been made!"
+    2. If student had misconception: "Concept explanation why question is sound."
+    """
+    conn = get_conn()
+    cur = conn.cursor()
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    new_status = "auto_applied" if req.verdict == "error_verified" else "reviewed"
+    new_route = "auto_apply" if req.verdict == "error_verified" else "no_change"
+
+    cur.execute("""
+        UPDATE reports
+        SET student_reply = ?,
+            verdict = ?,
+            status = ?,
+            route = ?,
+            faculty_name = ?,
+            resolved_at = ?
+        WHERE report_id = ?
+    """, (req.replyText.strip(), req.verdict, new_status, new_route, req.facultyName, now_iso, req.reportId))
+
+    conn.commit()
+    conn.close()
+
+    return {
+        "success": True,
+        "reportId": req.reportId,
+        "status": new_status,
+        "verdict": req.verdict,
+        "studentReply": req.replyText.strip(),
+        "message": "Response successfully sent back to student!"
+    }
+
 @app.get("/api/professor/reports")
 def get_professor_reports(subject: Optional[str] = None):
-    """
-    Returns doubts/reports filtered strictly by subject expertise.
-    If subject == 'Physics', only Physics reports are fetched.
-    If subject is omitted or None (e.g. Admin), all reports are returned.
-    """
     conn = get_conn()
     cur = conn.cursor()
 
@@ -354,6 +440,8 @@ def get_professor_reports(subject: Optional[str] = None):
             "student_reply": r["student_reply"],
             "reportedAt": r["reported_at"],
             "sessionId": r["session_id"],
+            "facultyName": r["faculty_name"],
+            "resolvedAt": r["resolved_at"],
             "questionDetails": q_details
         })
 
@@ -365,20 +453,18 @@ def get_professor_reports(subject: Optional[str] = None):
 
 @app.post("/api/professor/action")
 def professor_action(req: ProfessorActionRequest):
-    """
-    Faculty action on a reported doubt: approve, reject, or mark reviewed.
-    """
     conn = get_conn()
     cur = conn.cursor()
 
     new_status = "auto_applied" if req.action == "approve" else "dismissed" if req.action == "reject" else "reviewed"
     new_route = "auto_apply" if req.action == "approve" else "no_change" if req.action == "reject" else "faculty_review"
+    now_iso = datetime.now(timezone.utc).isoformat()
 
     cur.execute("""
         UPDATE reports
-        SET status = ?, route = ?
+        SET status = ?, route = ?, resolved_at = ?
         WHERE report_id = ?
-    """, (new_status, new_route, req.reportId))
+    """, (new_status, new_route, now_iso, req.reportId))
 
     conn.commit()
     conn.close()
@@ -407,4 +493,3 @@ def get_professor_stats(subject: Optional[str] = None):
         "dismissed": counts.get("dismissed", 0),
         "total": sum(counts.values())
     }
-

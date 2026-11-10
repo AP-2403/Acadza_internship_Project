@@ -11,13 +11,23 @@ import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 
 import { QuestionData, StudentReport, ReportResult, AuditEntry, EditProposal, User, LiveDoubt } from '../types';
 import { groupReportsByQuestion } from '../lib/urgency';
-import { fetchLiveDoubts } from '../lib/api';
+import { fetchLiveDoubts, sendProfessorReply } from '../lib/api';
 
 // Import bundled static datasets
 import questionsRaw from '../data/questions.json';
 import reportsRaw from '../data/reports.json';
 import resultsRaw from '../data/results.json';
-import { MessageSquare, Layers, CheckCircle2, Clock } from 'lucide-react';
+import {
+  MessageSquare,
+  Layers,
+  CheckCircle2,
+  Clock,
+  Send,
+  CheckCheck,
+  ShieldCheck,
+  AlertCircle,
+  X
+} from 'lucide-react';
 
 interface FacultyTriageConsoleProps {
   user: User;
@@ -35,6 +45,12 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
   const [isBonusOpen, setIsBonusOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
 
+  // Faculty replying to student doubt state
+  const [replyingDoubt, setReplyingDoubt] = useState<LiveDoubt | null>(null);
+  const [replyVerdict, setReplyVerdict] = useState<'error_verified' | 'concept_clarified'>('error_verified');
+  const [replyText, setReplyText] = useState('');
+  const [isSendingReply, setIsSendingReply] = useState(false);
+
   // Live in-memory & localStorage state
   const [resultsState, setResultsState] = useState<ReportResult[]>(() => {
     const saved = localStorage.getItem('acadza_results');
@@ -49,11 +65,12 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
   const [liveDoubts, setLiveDoubts] = useState<LiveDoubt[]>([]);
 
   // Fetch live doubts periodically or on mount
+  const loadDoubts = async () => {
+    const doubts = await fetchLiveDoubts(user.subject);
+    setLiveDoubts(doubts);
+  };
+
   useEffect(() => {
-    const loadDoubts = async () => {
-      const doubts = await fetchLiveDoubts(user.subject);
-      setLiveDoubts(doubts);
-    };
     loadDoubts();
     const interval = setInterval(loadDoubts, 5000);
     return () => clearInterval(interval);
@@ -93,7 +110,6 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
     groups.length > 0 ? groups[0].questionId : null
   );
 
-  // Update selected group when subject changes
   useEffect(() => {
     if (groups.length > 0 && (!selectedGroupId || !groups.find((g) => g.questionId === selectedGroupId))) {
       setSelectedGroupId(groups[0].questionId);
@@ -123,7 +139,44 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
     };
   }, [groups]);
 
-  // Action handlers
+  // Open Reply Modal for Doubt
+  const handleOpenReplyModal = (doubt: LiveDoubt) => {
+    setReplyingDoubt(doubt);
+    setReplyVerdict('error_verified');
+    setReplyText(
+      'You were completely right! We verified your doubt against the formula and have updated the question in our question bank. Thank you for catching this error!'
+    );
+  };
+
+  const handleVerdictChange = (verdict: 'error_verified' | 'concept_clarified') => {
+    setReplyVerdict(verdict);
+    if (verdict === 'error_verified') {
+      setReplyText(
+        'You were completely right! We verified your doubt against the formula and have updated the question in our question bank. Thank you for catching this error!'
+      );
+    } else {
+      setReplyText(
+        'Thank you for raising this doubt. We checked the derivation carefully: the official answer key and solution steps remain verified as correct. Keep up the good practice!'
+      );
+    }
+  };
+
+  const handleSendReplyToStudent = async () => {
+    if (!replyingDoubt || !replyText.trim()) return;
+
+    setIsSendingReply(true);
+    await sendProfessorReply(
+      replyingDoubt.reportId,
+      replyText.trim(),
+      replyVerdict,
+      user.name
+    );
+    setIsSendingReply(false);
+    setReplyingDoubt(null);
+    await loadDoubts();
+  };
+
+  // Action handlers for AI triage
   const handleApprove = (comment?: string) => {
     if (!currentGroup) return;
     const res = currentGroup.primaryResult;
@@ -303,7 +356,7 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
             }`}
           >
             <MessageSquare className="w-3.5 h-3.5" />
-            <span>Live Student Doubts ({liveDoubts.length})</span>
+            <span>Live Student Doubts & Replies ({liveDoubts.length})</span>
           </button>
         </div>
 
@@ -373,15 +426,24 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
 
         </div>
       ) : (
-        /* Live Doubts Tab */
-        <div className="flex-1 p-6 overflow-y-auto max-w-5xl mx-auto w-full">
-          <div className="mb-4">
-            <h2 className="text-lg font-bold text-slate-900">
-              Student Doubts & Error Reports ({user.subject || selectedSubject})
-            </h2>
-            <p className="text-xs text-slate-500">
-              Directly submitted by students while reviewing their test solutions.
-            </p>
+        /* Live Doubts & Responses Tab */
+        <div className="flex-1 p-6 overflow-y-auto max-w-5xl mx-auto w-full space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">
+                Student Doubts & Explanations ({user.subject || selectedSubject})
+              </h2>
+              <p className="text-xs text-slate-500">
+                Review questions flagged by students during tests and send feedback directly back to their portal.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={loadDoubts}
+              className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg text-xs font-semibold text-slate-700 shadow-xs transition-colors"
+            >
+              Refresh Doubts
+            </button>
           </div>
 
           {liveDoubts.length === 0 ? (
@@ -390,48 +452,241 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
             </div>
           ) : (
             <div className="space-y-3">
-              {liveDoubts.map((doubt) => (
-                <div
-                  key={doubt.reportId}
-                  className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs flex items-start justify-between gap-4"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-900">
-                        {doubt.studentId}
-                      </span>
-                      <span className="text-[10px] font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
-                        QID: {doubt.questionId.slice(0, 10)}...
-                      </span>
-                      <span className="text-[10px] font-semibold bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">
-                        {doubt.subject}
-                      </span>
-                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {new Date(doubt.reportedAt).toLocaleTimeString()}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-800 font-medium">
-                      "{doubt.comment}"
-                    </p>
-                  </div>
+              {liveDoubts.map((doubt) => {
+                const isCorrected = doubt.status === 'auto_applied' || doubt.verdict === 'error_verified';
+                const isClarified = doubt.verdict === 'concept_clarified';
+                const isPending = doubt.status === 'pending';
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedGroupId(doubt.questionId);
-                        setActiveTab('triage');
-                      }}
-                      className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold border border-blue-200 transition-colors"
-                    >
-                      Open in Triage
-                    </button>
+                return (
+                  <div
+                    key={doubt.reportId}
+                    className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-slate-900">
+                            {doubt.studentId}
+                          </span>
+                          <span className="text-[10px] font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                            QID: {doubt.questionId.slice(0, 10)}...
+                          </span>
+                          <span className="text-[10px] font-semibold bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">
+                            {doubt.subject}
+                          </span>
+                          <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(doubt.reportedAt).toLocaleTimeString()}
+                          </span>
+                        </div>
+
+                        <div className="text-xs text-slate-800 font-medium pt-1">
+                          <span className="text-slate-400 text-[10px] uppercase font-bold block">
+                            Student Doubt:
+                          </span>
+                          "{doubt.comment}"
+                        </div>
+                      </div>
+
+                      {/* Right Action / Status */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {isPending ? (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenReplyModal(doubt)}
+                            className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all flex items-center gap-1.5"
+                          >
+                            <Send className="w-3 h-3" />
+                            <span>Reply to Student</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenReplyModal(doubt)}
+                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors"
+                          >
+                            Update Reply
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedGroupId(doubt.questionId);
+                            setActiveTab('triage');
+                          }}
+                          className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold border border-blue-200 transition-colors"
+                        >
+                          Open in Triage
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Faculty Response if already sent */}
+                    {doubt.studentReply && (
+                      <div
+                        className={`p-3 rounded-lg border text-xs leading-relaxed ${
+                          isCorrected
+                            ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                            : isClarified
+                            ? 'bg-blue-50 border-blue-200 text-blue-900'
+                            : 'bg-slate-50 border-slate-200 text-slate-800'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-bold flex items-center gap-1.5">
+                            {isCorrected ? (
+                              <>
+                                <CheckCheck className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>Accepted: Student was right &bull; Question corrected</span>
+                              </>
+                            ) : (
+                              <>
+                                <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                                <span>Concept Clarified: Question verified sound</span>
+                              </>
+                            )}
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            Sent to student portal
+                          </span>
+                        </div>
+                        <p className="mt-0.5">{doubt.studentReply}</p>
+                      </div>
+                    )}
+
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* MODAL: RESPOND TO STUDENT DOUBT                           */}
+      {/* ========================================================= */}
+      {replyingDoubt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            
+            {/* Modal Header */}
+            <div className="p-5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900">
+                  Respond to Student Doubt
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Report #{replyingDoubt.reportId} &bull; {replyingDoubt.subject} Department
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReplyingDoubt(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4 text-xs">
+              
+              {/* Student Comment Reference */}
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <span className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+                  Student's Query:
+                </span>
+                <p className="text-slate-900 font-semibold italic">
+                  "{replyingDoubt.comment}"
+                </p>
+              </div>
+
+              {/* Verdict Selector Radio Cards */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">
+                  Select Evaluation Verdict:
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  
+                  {/* Option 1: Student is correct */}
+                  <button
+                    type="button"
+                    onClick={() => handleVerdictChange('error_verified')}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      replyVerdict === 'error_verified'
+                        ? 'bg-emerald-50 border-emerald-500 ring-1 ring-emerald-500 text-emerald-900'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 font-bold text-xs">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Student is Correct</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Accept mistake & confirm that correction has been applied to question.
+                    </p>
+                  </button>
+
+                  {/* Option 2: Student has misconception */}
+                  <button
+                    type="button"
+                    onClick={() => handleVerdictChange('concept_clarified')}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      replyVerdict === 'concept_clarified'
+                        ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500 text-blue-900'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 font-bold text-xs">
+                      <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Question is Sound</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Explain why official answer is correct & clarify student's misconception.
+                    </p>
+                  </button>
+
+                </div>
+              </div>
+
+              {/* Reply Textarea */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Explanation Message for Student:
+                </label>
+                <textarea
+                  rows={4}
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  className="w-full p-3 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-900"
+                  placeholder="Type explanation to explain concept or confirm correction..."
+                />
+              </div>
+
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setReplyingDoubt(null)}
+                className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isSendingReply || !replyText.trim()}
+                onClick={handleSendReplyToStudent}
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-40"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>{isSendingReply ? 'Sending...' : 'Send to Student'}</span>
+              </button>
+            </div>
+
+          </div>
         </div>
       )}
 
@@ -457,4 +712,3 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
     </div>
   );
 };
-
