@@ -67,6 +67,9 @@ export function groupReportsByQuestion(
     const question = questions[qid];
     if (!question) return;
 
+    // Ensure reports are sorted descending by arrival time so reports[0] is the latest
+    qReports.sort((a, b) => new Date(b.reportedAt).getTime() - new Date(a.reportedAt).getTime());
+
     // Pick primary result (prefer defect or highest confidence)
     const qResults = qReports
       .map(r => resultMap.get(r.reportId))

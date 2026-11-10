@@ -11,7 +11,7 @@ import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 
 import { QuestionData, StudentReport, ReportResult, AuditEntry, EditProposal, User, LiveDoubt } from '../types';
 import { groupReportsByQuestion } from '../lib/urgency';
-import { fetchLiveDoubts, sendProfessorReply } from '../lib/api';
+import { fetchLiveDoubts, fetchQueueData, sendProfessorReply } from '../lib/api';
 
 // Import bundled static datasets
 import questionsRaw from '../data/questions.json';
@@ -28,7 +28,8 @@ import {
   AlertCircle,
   X,
   ArrowUpDown,
-  Calendar
+  Calendar,
+  RotateCcw
 } from 'lucide-react';
 
 interface FacultyTriageConsoleProps {
@@ -58,6 +59,12 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
   const [replyText, setReplyText] = useState('');
   const [isSendingReply, setIsSendingReply] = useState(false);
 
+  // Live reports state (merged static seed + newly submitted student feedback)
+  const [liveReports, setLiveReports] = useState<StudentReport[]>(() => {
+    const saved = localStorage.getItem('acadza_live_reports');
+    return saved ? JSON.parse(saved) : (reportsRaw as StudentReport[]);
+  });
+
   // Live in-memory & localStorage state
   const [resultsState, setResultsState] = useState<ReportResult[]>(() => {
     const saved = localStorage.getItem('acadza_results');
@@ -70,16 +77,37 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
   });
 
   const [liveDoubts, setLiveDoubts] = useState<LiveDoubt[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Fetch live doubts periodically or on mount
-  const loadDoubts = async () => {
+  // Fetch full queue data (reports + triage results + doubts)
+  const loadQueueData = async () => {
+    setIsRefreshing(true);
+    const { reports, results } = await fetchQueueData(user.subject);
+    if (reports && reports.length > 0) {
+      setLiveReports(reports);
+      localStorage.setItem('acadza_live_reports', JSON.stringify(reports));
+    }
+    if (results && results.length > 0) {
+      setResultsState((prev) => {
+        const map = new Map<string, ReportResult>();
+        prev.forEach(r => map.set(r.reportId, r));
+        results.forEach(r => {
+          if (!map.has(r.reportId)) {
+            map.set(r.reportId, r);
+          }
+        });
+        return Array.from(map.values());
+      });
+    }
+
     const doubts = await fetchLiveDoubts(user.subject);
     setLiveDoubts(doubts);
+    setIsRefreshing(false);
   };
 
   useEffect(() => {
-    loadDoubts();
-    const interval = setInterval(loadDoubts, 5000);
+    loadQueueData();
+    const interval = setInterval(loadQueueData, 4000);
     return () => clearInterval(interval);
   }, [user.subject]);
 
@@ -92,14 +120,14 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
     return map;
   }, []);
 
-  // Compute prioritized, grouped queue
+  // Compute prioritized, grouped queue using liveReports
   const allGroups = useMemo(() => {
     return groupReportsByQuestion(
       questionsMap,
-      reportsRaw as StudentReport[],
+      liveReports,
       resultsState
     );
-  }, [questionsMap, resultsState]);
+  }, [questionsMap, liveReports, resultsState]);
 
   // Filter groups strictly by the professor's subject expertise
   const groups = useMemo(() => {
@@ -203,7 +231,7 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
     );
     setIsSendingReply(false);
     setReplyingDoubt(null);
-    await loadDoubts();
+    await loadQueueData();
   };
 
   // Action handlers for AI triage
@@ -390,11 +418,23 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
           </button>
         </div>
 
-        <div className="text-xs text-slate-500 font-medium flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span>
-            Queue scope: <strong>{user.subject ? `${user.subject} Only` : selectedSubject}</strong>
-          </span>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={loadQueueData}
+            className="flex items-center gap-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 transition-colors"
+            title="Refresh reports from backend database"
+          >
+            <RotateCcw className={`w-3 h-3 ${isRefreshing ? 'animate-spin text-blue-600' : ''}`} />
+            <span>Sync Live Data</span>
+          </button>
+
+          <div className="text-xs text-slate-500 font-medium flex items-center gap-1.5 border-l border-slate-200 pl-3">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>
+              Queue: <strong>{user.subject ? `${user.subject} Dept` : selectedSubject}</strong>
+            </span>
+          </div>
         </div>
       </div>
 
@@ -474,10 +514,11 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
             
             <button
               type="button"
-              onClick={loadDoubts}
-              className="self-start sm:self-auto px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg text-xs font-semibold text-slate-700 shadow-xs transition-colors"
+              onClick={loadQueueData}
+              className="self-start sm:self-auto px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg text-xs font-semibold text-slate-700 shadow-xs transition-colors flex items-center gap-1.5"
             >
-              Refresh Doubts
+              <RotateCcw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span>Refresh Doubts</span>
             </button>
           </div>
 

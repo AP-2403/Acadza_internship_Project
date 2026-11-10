@@ -1,5 +1,7 @@
-import { User, QuestionTestResult, TestStats, LiveDoubt, StudentDoubtItem } from '../types';
+import { User, QuestionTestResult, TestStats, LiveDoubt, StudentDoubtItem, StudentReport, ReportResult } from '../types';
 import questionsRaw from '../data/questions.json';
+import reportsRaw from '../data/reports.json';
+import resultsRaw from '../data/results.json';
 
 const API_BASE = 'http://localhost:8000/api';
 
@@ -214,6 +216,86 @@ export async function fetchLiveDoubts(subject: string | null): Promise<LiveDoubt
   return doubts;
 }
 
+export async function fetchQueueData(subject: string | null): Promise<{
+  reports: StudentReport[];
+  results: ReportResult[];
+}> {
+  try {
+    const online = await isBackendOnline();
+    if (online) {
+      const url = subject && subject.toLowerCase() !== 'all'
+        ? `${API_BASE}/professor/reports?subject=${encodeURIComponent(subject)}`
+        : `${API_BASE}/professor/reports`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        const reports: StudentReport[] = [];
+        const results: ReportResult[] = [];
+
+        (data.reports || []).forEach((r: any) => {
+          reports.push({
+            reportId: r.reportId,
+            questionId: r.questionId,
+            studentId: r.studentId,
+            source: r.source || 'web',
+            reportedAt: r.reportedAt,
+            comment: r.comment
+          });
+
+          results.push({
+            reportId: r.reportId,
+            questionId: r.questionId,
+            verdict: r.verdict || 'error',
+            repair: r.repair || (r.route === 'auto_apply' ? 'auto_repair' : null),
+            edit: r.edit || null,
+            route: r.route || (r.status === 'auto_applied' ? 'auto_apply' : r.status === 'reviewed' ? 'no_change' : 'faculty_review'),
+            confidence: r.confidence || 0.95,
+            evidence: r.evidence || r.comment,
+            student_reply: r.student_reply || 'Faculty is reviewing this report.'
+          });
+        });
+
+        return { reports, results };
+      }
+    }
+  } catch (err) {
+    console.warn('fetchQueueData backend error, using static + local fallback', err);
+  }
+
+  // Fallback to static datasets + local storage doubts
+  const baseReports = [...(reportsRaw as StudentReport[])];
+  const baseResults = [...(resultsRaw as unknown as ReportResult[])];
+
+  const savedDoubts = localStorage.getItem('acadza_student_doubts');
+  if (savedDoubts) {
+    const doubts: LiveDoubt[] = JSON.parse(savedDoubts);
+    doubts.forEach((d) => {
+      baseReports.unshift({
+        reportId: d.reportId,
+        questionId: d.questionId,
+        studentId: d.studentId,
+        source: 'student_test_portal',
+        reportedAt: d.reportedAt,
+        comment: d.comment
+      });
+
+      baseResults.unshift({
+        reportId: d.reportId,
+        questionId: d.questionId,
+        verdict: d.verdict || 'reported_doubt',
+        repair: null,
+        edit: null,
+        route: d.status === 'auto_applied' ? 'auto_apply' : d.status === 'reviewed' ? 'no_change' : 'faculty_review',
+        confidence: 0.90,
+        evidence: `Direct student doubt: ${d.comment}`,
+        student_reply: d.studentReply || 'Your doubt has been submitted and is currently being evaluated by the subject faculty.'
+      });
+    });
+  }
+
+  return { reports: baseReports, results: baseResults };
+}
+
 export async function fetchStudentDoubts(studentId: string = 'student'): Promise<StudentDoubtItem[]> {
   try {
     const online = await isBackendOnline();
@@ -277,7 +359,6 @@ export async function sendProfessorReply(
     console.warn('Backend reply error, saving locally', err);
   }
 
-  // Local fallback
   const saved = localStorage.getItem('acadza_student_doubts');
   if (saved) {
     const doubts: LiveDoubt[] = JSON.parse(saved);
