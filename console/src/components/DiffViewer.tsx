@@ -5,6 +5,7 @@ import {
   FileCode 
 } from 'lucide-react';
 import { ReportResult } from '../types';
+import { FormattedMathText } from './FormattedMath';
 
 interface DiffViewerProps {
   result: ReportResult;
@@ -52,12 +53,12 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ result }) => {
         </div>
       </div>
 
-      {/* AI Evidence Explanation */}
+      {/* AI Evidence Explanation with Formatted Math */}
       <div className="rounded-lg bg-blue-50/70 p-3 text-xs text-slate-800 border border-blue-200 mb-3 leading-relaxed flex items-start space-x-2">
         <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
         <div>
           <span className="font-bold text-blue-900">Faculty Proof & Evidence: </span>
-          <span className="text-slate-700">{evidence}</span>
+          <FormattedMathText text={evidence} className="text-slate-800 font-medium" />
         </div>
       </div>
 

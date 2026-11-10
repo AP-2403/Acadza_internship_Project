@@ -8,6 +8,7 @@ import {
   Globe
 } from 'lucide-react';
 import { QuestionGroup } from '../types';
+import { FormattedHtmlMath } from './FormattedMath';
 
 interface QuestionViewerProps {
   group: QuestionGroup;
@@ -125,10 +126,7 @@ export const QuestionViewer: React.FC<QuestionViewerProps> = ({ group }) => {
               <Layers className="h-3.5 w-3.5 text-blue-600" />
               <span>Live Rendered Question (Native MathML)</span>
             </h4>
-            <div 
-              className="question-rendered text-slate-900 text-sm leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: questionHtml }}
-            />
+            <FormattedHtmlMath html={questionHtml} className="text-slate-900 text-sm" />
           </div>
         )}
 
@@ -139,10 +137,7 @@ export const QuestionViewer: React.FC<QuestionViewerProps> = ({ group }) => {
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
               <span>Stored Solution in Database</span>
             </h4>
-            <div 
-              className="question-rendered text-slate-800 text-sm leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: solutionHtml }}
-            />
+            <FormattedHtmlMath html={solutionHtml} className="text-slate-800 text-sm" />
           </div>
         )}
 

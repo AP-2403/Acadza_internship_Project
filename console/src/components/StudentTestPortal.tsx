@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { User, QuestionTestResult, TestStats, StudentDoubtItem } from '../types';
 import { submitStudentTest, submitStudentDoubt, fetchStudentDoubts } from '../lib/api';
+import { FormattedHtmlMath, FormattedMathText } from './FormattedMath';
 import questionsRaw from '../data/questions.json';
 
 interface StudentTestPortalProps {
@@ -158,14 +159,9 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
     });
   }, [results, resultsFilter, subjectFilter]);
 
-  // Render question text with MathML
+  // Render question text with clean MathML & typography
   const renderFormattedHtml = (htmlContent: string) => {
-    return (
-      <div
-        className="question-body text-slate-800 text-sm leading-relaxed prose prose-slate max-w-none"
-        dangerouslySetInnerHTML={{ __html: htmlContent }}
-      />
-    );
+    return <FormattedHtmlMath html={htmlContent} />;
   };
 
   return (
@@ -621,7 +617,7 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
                             <span>You were correct!</span>
                           </div>
                         )}
-                        <p>{doubt.studentReply}</p>
+                        <p><FormattedMathText text={doubt.studentReply} /></p>
                       </div>
                     </div>
 
@@ -1159,7 +1155,7 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
                           )}
                         </div>
                         <p className="text-xs text-slate-800 leading-relaxed font-medium">
-                          {existingDoubt.studentReply}
+                          <FormattedMathText text={existingDoubt.studentReply} />
                         </p>
                       </div>
                     )}

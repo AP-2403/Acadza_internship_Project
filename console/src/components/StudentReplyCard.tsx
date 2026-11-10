@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { MessageSquareHeart, Edit3, Check, Undo2 } from 'lucide-react';
+import { FormattedMathText } from './FormattedMath';
 
 interface StudentReplyCardProps {
   reply: string;
@@ -68,7 +69,7 @@ export const StudentReplyCard: React.FC<StudentReplyCardProps> = ({
         />
       ) : (
         <div className="rounded-lg bg-slate-50 p-3 text-xs text-slate-700 italic leading-relaxed border border-slate-200">
-          "{reply}"
+          "<FormattedMathText text={reply} />"
         </div>
       )}
     </div>

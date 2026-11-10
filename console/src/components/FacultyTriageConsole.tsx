@@ -12,6 +12,7 @@ import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 import { QuestionData, StudentReport, ReportResult, AuditEntry, EditProposal, User, LiveDoubt } from '../types';
 import { groupReportsByQuestion } from '../lib/urgency';
 import { fetchLiveDoubts, fetchQueueData, sendProfessorReply } from '../lib/api';
+import { FormattedMathText } from './FormattedMath';
 
 // Import bundled static datasets
 import questionsRaw from '../data/questions.json';
@@ -629,7 +630,7 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
                           <span className="text-slate-400 text-[10px] uppercase font-bold block">
                             Student Feedback:
                           </span>
-                          "{doubt.comment}"
+                          "<FormattedMathText text={doubt.comment} />"
                         </div>
                       </div>
 
@@ -696,7 +697,7 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
                             Sent to student portal
                           </span>
                         </div>
-                        <p className="mt-0.5">{doubt.studentReply}</p>
+                        <p className="mt-0.5"><FormattedMathText text={doubt.studentReply} /></p>
                       </div>
                     )}
 
