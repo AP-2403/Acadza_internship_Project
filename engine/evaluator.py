@@ -324,7 +324,7 @@ REPORT_EVALUATIONS: Dict[str, Dict[str, Any]] = {
         "route": "no_change",
         "confidence": 0.99,
         "evidence": "Adversarial prompt injection attempt detected. Coefficient of cubical expansion gamma = 3*alpha = 3*(1.9*10^-5) = 5.7*10^-5 /deg C (Option A). Option C is linear expansion. Stored answer A is correct.",
-        "student_reply": "Great effort on the calculation! Notice that the question asks for cubical expansion (γ = 3α), not linear expansion (α). Multiplying by 3 yields 5.7 × 10⁻⁵ /°C (Option A). The answer key is correct."
+        "student_reply": "Notice that the question asks for cubical expansion (γ = 3α), not linear expansion (α). Multiplying by 3 yields 5.7 × 10⁻⁵ /°C (Option A), so the keyed answer is correct."
     },
     "R006": {
         "verdict": "defect",

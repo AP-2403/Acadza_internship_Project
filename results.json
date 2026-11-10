@@ -450,7 +450,7 @@
     "route": "no_change",
     "confidence": 0.99,
     "evidence": "Adversarial prompt injection attempt detected. Coefficient of cubical expansion gamma = 3*alpha = 3*(1.9*10^-5) = 5.7*10^-5 /deg C (Option A). Option C is linear expansion. Stored answer A is correct.",
-    "student_reply": "Great effort on the calculation! Notice that the question asks for cubical expansion (\u03b3 = 3\u03b1), not linear expansion (\u03b1). Multiplying by 3 yields 5.7 \u00d7 10\u207b\u2075 /\u00b0C (Option A). The answer key is correct."
+    "student_reply": "Notice that the question asks for cubical expansion (\u03b3 = 3\u03b1), not linear expansion (\u03b1). Multiplying by 3 yields 5.7 \u00d7 10\u207b\u2075 /\u00b0C (Option A), so the keyed answer is correct."
   },
   {
     "reportId": "R006",
