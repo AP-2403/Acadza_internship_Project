@@ -5,8 +5,11 @@ import {
   Keyboard, 
   AlertTriangle,
   CheckCircle2,
-  FileSearch
+  FileSearch,
+  LogOut,
+  GraduationCap
 } from 'lucide-react';
+import { User } from '../types';
 
 interface NavbarProps {
   onOpenAudit: () => void;
@@ -18,6 +21,10 @@ interface NavbarProps {
     autoApplied: number;
     noChange: number;
   };
+  user?: User;
+  onLogout?: () => void;
+  selectedSubject?: string;
+  onSubjectChange?: (subject: string) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -25,7 +32,18 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenShortcuts,
   onOpenBonus,
   stats,
+  user,
+  onLogout,
+  selectedSubject,
+  onSubjectChange
 }) => {
+  const getInitials = (name?: string) => {
+    if (!name) return 'PR';
+    const parts = name.split(' ');
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  };
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/95 backdrop-blur-md shadow-xs">
       <div className="flex h-16 items-center justify-between px-4 sm:px-6">
@@ -41,15 +59,41 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 border border-blue-200">
                 REPORT → FIX
               </span>
+              {user && (
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  user.subject === 'Physics' ? 'bg-purple-100 text-purple-800' :
+                  user.subject === 'Zoology' ? 'bg-emerald-100 text-emerald-800' :
+                  user.subject === 'Botany' ? 'bg-amber-100 text-amber-800' :
+                  'bg-slate-800 text-white'
+                }`}>
+                  {user.subject ? `${user.subject} Dept` : 'Admin (All)'}
+                </span>
+              )}
             </div>
-            <p className="text-xs text-slate-500 font-medium">Faculty Late-Night Review Console</p>
+            <p className="text-xs text-slate-500 font-medium">Faculty Review Console</p>
           </div>
         </div>
 
-        {/* Center: Live Stats Badges */}
+        {/* Center: Live Stats Badges & Subject Switcher for Admin */}
         <div className="hidden md:flex items-center space-x-2 text-xs">
+          {user?.role === 'admin' && onSubjectChange && (
+            <div className="flex items-center gap-1.5 mr-2">
+              <span className="text-[11px] font-bold text-slate-500">Subject:</span>
+              <select
+                value={selectedSubject || 'all'}
+                onChange={(e) => onSubjectChange(e.target.value)}
+                className="text-xs font-semibold bg-slate-50 border border-slate-300 rounded-md px-2 py-1 text-slate-700"
+              >
+                <option value="all">All Subjects (44)</option>
+                <option value="Physics">Physics (35)</option>
+                <option value="Zoology">Zoology (5)</option>
+                <option value="Botany">Botany (4)</option>
+              </select>
+            </div>
+          )}
+
           <div className="flex items-center space-x-1.5 rounded-full bg-slate-100 px-3 py-1 border border-slate-200">
-            <span className="text-slate-500">Questions:</span>
+            <span className="text-slate-500">Queue:</span>
             <span className="font-semibold text-slate-800">{stats.total}</span>
           </div>
 
@@ -71,7 +115,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* Right: Actions, Reviewer & Tools */}
+        {/* Right: Actions, Reviewer & Logout */}
         <div className="flex items-center space-x-2">
           
           {/* Bonus Defects Button */}
@@ -81,7 +125,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             title="Inspect 4 unreported questions with hidden defects"
           >
             <FileSearch className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Bonus Defects (4)</span>
+            <span className="hidden sm:inline">Bonus Defects</span>
           </button>
 
           {/* Audit History */}
@@ -105,14 +149,33 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Reviewer Profile */}
           <div className="hidden lg:flex items-center space-x-2 border-l border-slate-200 pl-3">
-            <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-xs font-bold text-white shadow-xs">
-              AS
+            <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-xs ${
+              user?.subject === 'Physics' ? 'bg-purple-600' :
+              user?.subject === 'Zoology' ? 'bg-emerald-600' :
+              user?.subject === 'Botany' ? 'bg-amber-600' :
+              'bg-blue-600'
+            }`}>
+              {getInitials(user?.name)}
             </div>
             <div className="text-left text-xs">
-              <div className="font-semibold text-slate-800">Prof. A. Sharma</div>
-              <div className="text-[10px] text-slate-500 font-medium">Senior Physics Lead</div>
+              <div className="font-semibold text-slate-800">{user?.name || 'Prof. H. C. Verma'}</div>
+              <div className="text-[10px] text-slate-500 font-medium">
+                {user?.subject ? `${user.subject} Faculty Lead` : 'Dean of Academics'}
+              </div>
             </div>
           </div>
+
+          {/* Logout Button */}
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-red-600 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-red-200 hover:bg-red-50 transition-colors ml-1"
+              title="Sign Out"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">Sign Out</span>
+            </button>
+          )}
 
         </div>
       </div>

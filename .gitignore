@@ -19,6 +19,8 @@ __pycache__/
 env/
 venv/
 ENV/
+backend_venv/
+*.db
 
 # Environment and IDE
 .env

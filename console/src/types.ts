@@ -81,3 +81,42 @@ export interface QuestionGroup {
   urgencyLevel: 'critical' | 'high' | 'medium' | 'low';
 }
 
+export interface User {
+  username: string;
+  name: string;
+  role: 'student' | 'professor' | 'admin';
+  subject: string | null;
+  token?: string;
+}
+
+export interface QuestionTestResult {
+  questionId: string;
+  subject: string;
+  chapter: string;
+  questionType: 'scq' | 'mcq' | 'integerQuestion';
+  questionText: string;
+  solutionText: string;
+  quesImages?: string[];
+  solutionImages?: string[];
+  correctAnswer: string;
+  studentAnswer: string | null;
+  status: 'correct' | 'wrong' | 'unattempted';
+}
+
+export interface TestStats {
+  total: number;
+  attempted: number;
+  correct: number;
+  incorrect: number;
+  scorePercent: number;
+}
+
+export interface LiveDoubt {
+  reportId: string;
+  questionId: string;
+  studentId: string;
+  subject: string;
+  comment: string;
+  status: 'pending' | 'reviewed' | 'auto_applied' | 'dismissed';
+  reportedAt: string;
+}
