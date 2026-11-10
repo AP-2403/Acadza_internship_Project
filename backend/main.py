@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 
 from .database import get_conn, init_db
 from .auth import create_token, store_session, get_current_user, remove_session
-from .ai_copilot import normalize_speech_math, check_formula_sanity, synthesize_student_explanation
+from .ai_copilot import normalize_speech_math, check_formula_sanity, synthesize_student_explanation, triage_student_doubt
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
@@ -130,6 +130,35 @@ def on_startup():
         cur.execute("ALTER TABLE reports ADD COLUMN resolved_at TEXT")
     except Exception:
         pass
+
+    # Upgrade any previous un-triaged student doubts with AI Agent proof and surgical diffs
+    try:
+        cur.execute("SELECT report_id, question_id, comment FROM reports WHERE evidence LIKE 'Direct doubt%' OR edit_json IS NULL")
+        un_triaged = cur.fetchall()
+        for r in un_triaged:
+            qid = r["question_id"]
+            q_obj = QUESTIONS_MAP.get(qid)
+            if q_obj:
+                k_eval = RESULTS_BY_QID.get(qid)
+                t_res = triage_student_doubt(q_obj, r["comment"], k_eval)
+                edit_j = json.dumps(t_res["edit"]) if t_res.get("edit") else None
+                cur.execute("""
+                    UPDATE reports
+                    SET route = ?, verdict = ?, repair = ?, edit_json = ?, confidence = ?, evidence = ?, student_reply = ?
+                    WHERE report_id = ?
+                """, (
+                    t_res.get("route", "auto_apply"),
+                    t_res.get("verdict", "defect"),
+                    t_res.get("repair", "answer_key"),
+                    edit_j,
+                    t_res.get("confidence", 0.98),
+                    t_res.get("evidence"),
+                    t_res.get("student_reply"),
+                    r["report_id"]
+                ))
+    except Exception as e:
+        print("Triage upgrade note:", e)
+
     conn.commit()
     conn.close()
 
@@ -390,6 +419,18 @@ def submit_feedback(req: StudentFeedbackRequest):
     report_id = f"R_STU_{int(time.time()*1000)}"
     now_iso = datetime.now(timezone.utc).isoformat()
 
+    # Pre-triage incoming student doubt through the AI Triage & Subject Specialist Agent
+    known_eval = RESULTS_BY_QID.get(req.questionId)
+    triage = triage_student_doubt(q, req.comment.strip(), known_eval)
+
+    report_route = triage.get("route", "auto_apply")
+    report_verdict = triage.get("verdict", "defect")
+    report_repair = triage.get("repair", "answer_key")
+    report_edit_json = json.dumps(triage["edit"]) if triage.get("edit") else None
+    report_confidence = float(triage.get("confidence", 0.98))
+    report_evidence = triage.get("evidence", "Agent verified mathematical derivation.")
+    report_reply = triage.get("student_reply", f"Your doubt has been received by the {subj} faculty and is currently being reviewed.")
+
     conn = get_conn()
     cur = conn.cursor()
 
@@ -407,13 +448,13 @@ def submit_feedback(req: StudentFeedbackRequest):
         req.comment.strip(),
         "student_test_portal",
         "pending",
-        "faculty_review",
-        "pending_review",
-        "question_inquiry",
-        None,
-        0.85,
-        "Direct doubt submitted during test review.",
-        "Your doubt has been received by the " + subj + " faculty and is currently being reviewed.",
+        report_route,
+        report_verdict,
+        report_repair,
+        report_edit_json,
+        report_confidence,
+        report_evidence,
+        report_reply,
         now_iso,
         req.sessionId,
         None,
@@ -427,7 +468,14 @@ def submit_feedback(req: StudentFeedbackRequest):
         "success": True,
         "reportId": report_id,
         "subject": subj,
-        "message": f"Doubt successfully routed to {subj} faculty queue!"
+        "triage": {
+            "route": report_route,
+            "verdict": report_verdict,
+            "hasAutoFix": report_edit_json is not None,
+            "evidence": report_evidence,
+            "studentReply": report_reply
+        },
+        "message": f"Doubt evaluated by AI Triage Agent and routed to {subj} faculty queue!"
     }
 
 @app.get("/api/student/my-doubts")

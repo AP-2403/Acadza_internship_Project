@@ -239,7 +239,9 @@ export async function fetchQueueData(subject: string | null): Promise<{
             studentId: r.studentId,
             source: r.source || 'web',
             reportedAt: r.reportedAt,
-            comment: r.comment
+            comment: r.comment,
+            status: r.status,
+            resolvedAt: r.resolvedAt,
           });
 
           results.push({
@@ -251,7 +253,9 @@ export async function fetchQueueData(subject: string | null): Promise<{
             route: r.route || (r.status === 'auto_applied' ? 'auto_apply' : r.status === 'reviewed' ? 'no_change' : 'faculty_review'),
             confidence: r.confidence || 0.95,
             evidence: r.evidence || r.comment,
-            student_reply: r.student_reply || 'Faculty is reviewing this report.'
+            student_reply: r.student_reply || 'Faculty is reviewing this report.',
+            status: r.status,
+            resolvedAt: r.resolvedAt,
           });
         });
 

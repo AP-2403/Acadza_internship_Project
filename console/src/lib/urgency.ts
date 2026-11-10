@@ -75,10 +75,10 @@ export function groupReportsByQuestion(
       .map(r => resultMap.get(r.reportId))
       .filter((r): r is ReportResult => !!r);
 
-    const primaryResult =
-      qResults.find(r => r.route === 'faculty_review') ||
-      qResults.find(r => r.route === 'auto_apply') ||
-      qResults[0];
+    // Pick primary result: prioritize actionable auto_apply with proposed edit so faculty sees recommendation immediately,
+    // otherwise fallback to latest report's evaluation
+    const autoApplyResult = qResults.find(r => r.route === 'auto_apply' && r.edit);
+    const primaryResult = autoApplyResult || qResults[0];
 
     if (!primaryResult) return;
 

@@ -414,3 +414,4 @@ export const FacultySolutionCopilot: React.FC<FacultySolutionCopilotProps> = ({
     </div>
   );
 };
+

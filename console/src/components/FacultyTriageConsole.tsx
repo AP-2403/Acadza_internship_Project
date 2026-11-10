@@ -108,11 +108,11 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
         const map = new Map<string, ReportResult>();
         prev.forEach(r => map.set(r.reportId, r));
         results.forEach(r => {
-          if (!map.has(r.reportId)) {
-            map.set(r.reportId, r);
-          }
+          map.set(r.reportId, r);
         });
-        return Array.from(map.values());
+        const updated = Array.from(map.values());
+        localStorage.setItem('acadza_results', JSON.stringify(updated));
+        return updated;
       });
     }
 

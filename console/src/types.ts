@@ -14,6 +14,8 @@ export interface ReportResult {
   confidence: number;
   evidence: string;
   student_reply: string;
+  status?: string;
+  resolvedAt?: string | null;
 }
 
 export interface StudentReport {
@@ -23,6 +25,8 @@ export interface StudentReport {
   source: string;
   reportedAt: string;
   comment: string;
+  status?: string;
+  resolvedAt?: string | null;
 }
 
 export interface QuestionData {
