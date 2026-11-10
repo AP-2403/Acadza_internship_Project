@@ -15,6 +15,23 @@ from .ai_copilot import normalize_speech_math, check_formula_sanity, synthesize_
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 
+# Automatically load environment variables from .env file if present
+ENV_PATH = BASE_DIR / ".env"
+if ENV_PATH.exists():
+    try:
+        with open(ENV_PATH, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    k = k.strip()
+                    v = v.strip().strip("'\"")
+                    if k:
+                        os.environ[k] = v
+        print(f"Loaded environment variables from {ENV_PATH}")
+    except Exception as e:
+        print(f"Notice: could not load .env file: {e}")
+
 app = FastAPI(title="Acadza AI Faculty & Student Assessment Platform", version="2.1.0")
 
 # Enable CORS for local dev and preview
@@ -268,7 +285,14 @@ def extract_question_details(q: Dict[str, Any]):
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "ok", "service": "Acadza Assessment & Faculty Triage API", "version": "2.1.0"}
+    has_key = bool(os.environ.get("GEMINI_API_KEY"))
+    return {
+        "status": "ok",
+        "service": "Acadza Assessment & Faculty Triage API",
+        "version": "2.1.0",
+        "geminiConfigured": has_key,
+        "triageEngine": "Google Gemini 2.5 Flash Agent" if has_key else "Local Physics & Typo Rule Engine"
+    }
 
 @app.post("/api/auth/login")
 def login(req: LoginRequest):
