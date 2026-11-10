@@ -26,7 +26,9 @@ import {
   CheckCheck,
   ShieldCheck,
   AlertCircle,
-  X
+  X,
+  ArrowUpDown,
+  Calendar
 } from 'lucide-react';
 
 interface FacultyTriageConsoleProps {
@@ -39,6 +41,11 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubject, setSelectedSubject] = useState<string>(user.subject || 'all');
+  const [queueSortMethod, setQueueSortMethod] = useState<'newest' | 'oldest' | 'urgency'>('newest');
+
+  // Live doubts filtering and sorting
+  const [doubtsFilter, setDoubtsFilter] = useState<'all' | 'pending' | 'auto_applied' | 'reviewed'>('all');
+  const [doubtsSort, setDoubtsSort] = useState<'newest' | 'oldest'>('newest');
 
   // Modals state
   const [isAuditOpen, setIsAuditOpen] = useState(false);
@@ -138,6 +145,29 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
       noChange: groups.filter((g) => g.primaryResult.route === 'no_change').length,
     };
   }, [groups]);
+
+  // Filtered & Sorted Live Doubts
+  const filteredAndSortedDoubts = useMemo(() => {
+    let list = [...liveDoubts];
+
+    // Status filter
+    if (doubtsFilter === 'pending') {
+      list = list.filter((d) => d.status === 'pending');
+    } else if (doubtsFilter === 'auto_applied') {
+      list = list.filter((d) => d.status === 'auto_applied');
+    } else if (doubtsFilter === 'reviewed') {
+      list = list.filter((d) => d.status === 'reviewed' || d.status === 'dismissed');
+    }
+
+    // Time of arrival sort
+    list.sort((a, b) => {
+      const timeA = new Date(a.reportedAt).getTime() || 0;
+      const timeB = new Date(b.reportedAt).getTime() || 0;
+      return doubtsSort === 'newest' ? timeB - timeA : timeA - timeB;
+    });
+
+    return list;
+  }, [liveDoubts, doubtsFilter, doubtsSort]);
 
   // Open Reply Modal for Doubt
   const handleOpenReplyModal = (doubt: LiveDoubt) => {
@@ -372,7 +402,7 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
       {activeTab === 'triage' ? (
         <div className="flex-1 flex overflow-hidden">
           
-          {/* Left: Prioritized Queue Sidebar */}
+          {/* Left: Prioritized Queue Sidebar with Arrival Sorting */}
           <QueueSidebar
             groups={groups}
             selectedGroupId={selectedGroupId}
@@ -381,6 +411,8 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
             setActiveFilter={setActiveFilter}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
+            sortMethod={queueSortMethod}
+            onSortMethodChange={(s) => setQueueSortMethod(s)}
           />
 
           {/* Center / Right: Question Review Workspace */}
@@ -426,33 +458,105 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
 
         </div>
       ) : (
-        /* Live Doubts & Responses Tab */
+        /* Live Doubts & Responses Tab with Arrival Sorting & Separations */
         <div className="flex-1 p-6 overflow-y-auto max-w-5xl mx-auto w-full space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+          
+          {/* Header & Controls Strip */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
             <div>
               <h2 className="text-xl font-bold text-slate-900">
                 Student Doubts & Explanations ({user.subject || selectedSubject})
               </h2>
               <p className="text-xs text-slate-500">
-                Review questions flagged by students during tests and send feedback directly back to their portal.
+                Sorted by student arrival timestamp across status separations.
               </p>
             </div>
+            
             <button
               type="button"
               onClick={loadDoubts}
-              className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg text-xs font-semibold text-slate-700 shadow-xs transition-colors"
+              className="self-start sm:self-auto px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg text-xs font-semibold text-slate-700 shadow-xs transition-colors"
             >
               Refresh Doubts
             </button>
           </div>
 
-          {liveDoubts.length === 0 ? (
+          {/* Separation Filters + Arrival Time Sort Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-2.5 bg-white border border-slate-200 rounded-xl">
+            
+            {/* Status Separations: All, Pending, Auto-Applied, Reviewed/Dismissed */}
+            <div className="flex items-center gap-1 text-xs">
+              <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">Status:</span>
+              <div className="inline-flex p-0.5 bg-slate-100 rounded-lg">
+                {[
+                  { id: 'all', label: `All (${liveDoubts.length})` },
+                  { id: 'pending', label: `Review (${liveDoubts.filter(d => d.status === 'pending').length})` },
+                  { id: 'auto_applied', label: `Auto (${liveDoubts.filter(d => d.status === 'auto_applied').length})` },
+                  { id: 'reviewed', label: `Dismissed (${liveDoubts.filter(d => d.status === 'reviewed' || d.status === 'dismissed').length})` },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setDoubtsFilter(tab.id as any)}
+                    className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+                      doubtsFilter === tab.id
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Time of Arrival Sort Controls */}
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-[11px] font-bold text-slate-400 uppercase flex items-center gap-1">
+                <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                <span>Arrival:</span>
+              </span>
+              <div className="inline-flex p-0.5 bg-slate-100 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setDoubtsSort('newest')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-bold flex items-center gap-1 transition-all ${
+                    doubtsSort === 'newest'
+                      ? 'bg-white text-blue-700 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Show newest arrival feedback first"
+                >
+                  <Clock className="w-3 h-3" />
+                  <span>Newest First</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDoubtsSort('oldest')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-bold flex items-center gap-1 transition-all ${
+                    doubtsSort === 'oldest'
+                      ? 'bg-white text-blue-700 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Show oldest arrival feedback first"
+                >
+                  <Calendar className="w-3 h-3" />
+                  <span>Oldest First</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          {/* List of Doubts */}
+          {filteredAndSortedDoubts.length === 0 ? (
             <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-500 text-xs">
-              No live student doubts reported yet for {user.subject || 'this subject'}.
+              No student doubts match the current status filter.
             </div>
           ) : (
             <div className="space-y-3">
-              {liveDoubts.map((doubt) => {
+              {filteredAndSortedDoubts.map((doubt) => {
                 const isCorrected = doubt.status === 'auto_applied' || doubt.verdict === 'error_verified';
                 const isClarified = doubt.verdict === 'concept_clarified';
                 const isPending = doubt.status === 'pending';
@@ -474,15 +578,15 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
                           <span className="text-[10px] font-semibold bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">
                             {doubt.subject}
                           </span>
-                          <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {new Date(doubt.reportedAt).toLocaleTimeString()}
+                          <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+                            <Clock className="w-3 h-3 text-slate-400" />
+                            <span>Arrival: {new Date(doubt.reportedAt).toLocaleDateString()} {new Date(doubt.reportedAt).toLocaleTimeString()}</span>
                           </span>
                         </div>
 
                         <div className="text-xs text-slate-800 font-medium pt-1">
                           <span className="text-slate-400 text-[10px] uppercase font-bold block">
-                            Student Doubt:
+                            Student Feedback:
                           </span>
                           "{doubt.comment}"
                         </div>
