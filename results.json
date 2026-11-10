@@ -12,7 +12,7 @@
     "route": "auto_apply",
     "confidence": 0.98,
     "evidence": "Total flux through cube = (1/2)*(q/2)/eps0 + (1/8)*(2q)/eps0 = q/(4*eps0) + q/(4*eps0) = q/(2*eps0). Comparing with nq/(2*eps0) gives n = 1. Key is 2.",
-    "student_reply": "You're right! The total electric flux through the cube is q/(2\u03b5\u2080), which corresponds to n = 1. The answer key has been updated from 2 to 1."
+    "student_reply": "You're right! The total electric flux through the cube is q/(2ε₀), which corresponds to n = 1. The answer key has been updated from 2 to 1."
   },
   {
     "reportId": "R029",
@@ -23,7 +23,7 @@
     "route": "no_change",
     "confidence": 0.98,
     "evidence": "Equations: F - 100*mu = 10 and 2F - 100*mu = 100. Substituting F = 10 + 100*mu gives 20 + 200*mu - 100*mu = 100 => 100*mu = 80 => mu = 0.8 (Option A). Student obtained 0.4 due to arithmetic error.",
-    "student_reply": "Double-check the substitution in the second equation: 2(10 + 100\u03bc) - 100\u03bc = 100 simplifies to 100\u03bc = 80, which yields \u03bc = 0.8 (Option A). The answer key is correct."
+    "student_reply": "Double-check the substitution in the second equation: 2(10 + 100μ) - 100μ = 100 simplifies to 100μ = 80, which yields μ = 0.8 (Option A). The answer key is correct."
   },
   {
     "reportId": "R012",
@@ -68,7 +68,7 @@
     "route": "auto_apply",
     "confidence": 0.98,
     "evidence": "Pressure of gas is P = (1/3)*rho*(v_rms)^2 = (1/3)*(0.09)*(400^2) = 4800 N/m^2 (Option D). Stored key says A (4556 N/m^2). Student correctly flagged the key was wrong.",
-    "student_reply": "You're right that Option A was incorrect! Using P = (1/3)\u03c1(v_rms)\u00b2 gives 4800 N/m\u00b2, which corresponds to Option D. The answer key has been updated to D."
+    "student_reply": "You're right that Option A was incorrect! Using P = (1/3)ρ(v_rms)² gives 4800 N/m², which corresponds to Option D. The answer key has been updated to D."
   },
   {
     "reportId": "R008",
@@ -82,7 +82,7 @@
     },
     "route": "auto_apply",
     "confidence": 0.96,
-    "evidence": "Question stem mentions 'an inductance' without specifying its numerical value. The solution uses L = 95.5 mH (95.5 * 10^-3 H) to obtain Z = 50 ohm. Added value per stem_data taxonomy.",
+    "evidence": "Question stem mentions 'an inductance' without specifying its numerical value. The solution uses L = 95.5 mH (95.5 * 10^-3 H) to obtain Z = 50 ohm. Added the missing inductance value to the question statement.",
     "student_reply": "Good catch! The numerical value of the inductance (95.5 mH) was missing from the question text. It has now been added."
   },
   {
@@ -94,7 +94,7 @@
     "route": "no_change",
     "confidence": 0.98,
     "evidence": "Resultant intensity for phase difference pi/2 is I = I_0 + I_0 + 2*I_0*cos(pi/2) = 2*I_0, which is double the intensity of one wave, not equal. Assertion is false. Key D is correct.",
-    "student_reply": "With phase difference \u03c0/2, the resultant intensity is I = I\u2080 + I\u2080 + 2I\u2080 cos(\u03c0/2) = 2I\u2080, which is double the intensity of a single wave, not equal to it. The assertion is false, and the keyed answer D is correct."
+    "student_reply": "With phase difference π/2, the resultant intensity is I = I₀ + I₀ + 2I₀ cos(π/2) = 2I₀, which is double the intensity of a single wave, not equal to it. The assertion is false, and the keyed answer D is correct."
   },
   {
     "reportId": "R010",
@@ -108,7 +108,7 @@
     },
     "route": "auto_apply",
     "confidence": 0.96,
-    "evidence": "Question only defines options (A), (B), and (C); option (D) is missing from the question HTML. Appended option D distractor per option_repair taxonomy.",
+    "evidence": "Question only defines options (A), (B), and (C); option (D) is missing from the question HTML. Added the missing fourth option to complete the multiple-choice question.",
     "student_reply": "Thank you for flagging this! Option D was missing from the question options and has now been restored."
   },
   {
@@ -131,7 +131,7 @@
     "route": "no_change",
     "confidence": 0.98,
     "evidence": "Shift = (D/d)*[t1*(mu1 - 1) - t2*(mu2 - 1)] = 0.08 m. Question explicitly asks for shift 'in cm': 0.08 m = 8 cm. Key 8 is correct; student missed unit conversion.",
-    "student_reply": "Notice that the question explicitly asks for the shift in centimeters (cm). While the calculation gives 0.08 meters, converting to cm yields 0.08 \u00d7 100 = 8 cm. The answer key is correct."
+    "student_reply": "Notice that the question explicitly asks for the shift in centimeters (cm). While the calculation gives 0.08 meters, converting to cm yields 0.08 × 100 = 8 cm. The answer key is correct."
   },
   {
     "reportId": "R026",
@@ -178,7 +178,7 @@
     },
     "route": "auto_apply",
     "confidence": 0.96,
-    "evidence": "Question statement omits the inductance value L. Stored solution explicitly calculates with L = 95.5 mH to get impedance 50 ohm. Added missing value per stem_data taxonomy.",
+    "evidence": "Question statement omits the inductance value L. Stored solution explicitly calculates with L = 95.5 mH to get impedance 50 ohm. Added the missing value to the question statement.",
     "student_reply": "You're right! The value of the inductance (95.5 mH) was missing from the question statement. It has now been added."
   },
   {
@@ -219,7 +219,7 @@
     },
     "route": "auto_apply",
     "confidence": 0.99,
-    "evidence": "Raw LaTeX macro '\\frac{7}{8}' leaked into the HTML question text instead of rendered math. Replaced with clean fraction '7/8' per markup_leak taxonomy.",
+    "evidence": "Raw LaTeX macro '\\frac{7}{8}' leaked into the HTML question text instead of rendered math. Formatted fraction cleanly as 7/8 in the question stem.",
     "student_reply": "Thank you for spotting that! The raw '\\frac' code in the question text has been cleaned up to display properly as 7/8."
   },
   {
@@ -253,7 +253,7 @@
     "route": "no_change",
     "confidence": 0.98,
     "evidence": "Equating horizontal range R = (u^2 * sin(2*theta))/g with maximum height H = (u^2 * sin^2(theta))/(2*g) gives tan(theta) = 4 => theta = tan^-1(4) (Option B). Student forgot denominator 2.",
-    "student_reply": "Remember the factor of 2 in H = u\u00b2 sin\u00b2\u03b8 / (2g). Equating H = R gives (sin\u00b2\u03b8)/2 = 2 sin\u03b8 cos\u03b8, which simplifies to tan\u03b8 = 4, so \u03b8 = tan\u207b\u00b9(4) (Option B). The answer key is correct."
+    "student_reply": "Remember the factor of 2 in H = u² sin²θ / (2g). Equating H = R gives (sin²θ)/2 = 2 sinθ cosθ, which simplifies to tanθ = 4, so θ = tan⁻¹(4) (Option B). The answer key is correct."
   },
   {
     "reportId": "R022",
@@ -267,7 +267,7 @@
     },
     "route": "auto_apply",
     "confidence": 0.99,
-    "evidence": "Option D contains a spelling typo: 'Choroid plexux' instead of 'Choroid plexus'. Corrected per spelling taxonomy.",
+    "evidence": "Option D contains a spelling typo: 'Choroid plexux' instead of 'Choroid plexus'. Corrected spelling typo: 'Choroid plexus'.",
     "student_reply": "Thank you for noting the typo! 'Choroid plexux' in Option D has been corrected to 'Choroid plexus'."
   },
   {
@@ -278,7 +278,7 @@
     "edit": null,
     "route": "faculty_review",
     "confidence": 0.98,
-    "evidence": "Options B and C both state '0 W'. Two options repeat; new distractor authoring requires faculty approval per taxonomy.",
+    "evidence": "Options B and C both state '0 W'. Two options repeat; authoring alternative options requires faculty review.",
     "student_reply": "Thank you for catching this. Options B and C are indeed duplicates (both 0 W). This has been routed to faculty to author a proper replacement distractor."
   },
   {
@@ -293,8 +293,8 @@
     },
     "route": "auto_apply",
     "confidence": 0.98,
-    "evidence": "Equating 800*g = 2*a^2*1*g yields a^2 = 400 => a = 20 cm. Key 20 is correct, but solution contained a typo concluding 'a = 40 cm'. Fixed solution text per solution_fix taxonomy.",
-    "student_reply": "The keyed answer of 20 cm is correct (since a\u00b2 = 400 yields a = 20, not 40). The typo in the solution text has been corrected to 'a = 20 cm'."
+    "evidence": "Equating 800*g = 2*a^2*1*g yields a^2 = 400 => a = 20 cm. Key 20 is correct, but solution contained a typo concluding 'a = 40 cm'. Fixed the concluding step in the solution derivation.",
+    "student_reply": "The keyed answer of 20 cm is correct (since a² = 400 yields a = 20, not 40). The typo in the solution text has been corrected to 'a = 20 cm'."
   },
   {
     "reportId": "R018",
@@ -308,7 +308,7 @@
     },
     "route": "auto_apply",
     "confidence": 0.97,
-    "evidence": "Solution opens with a stray MathML step '= 5.47 A' belonging to another problem. The remaining solution steps correctly compute KE = 16.8 eV (Option B). Removed stray snippet.",
+    "evidence": "The official solution opens with an extraneous line stating '= 5.47 Å' belonging to another problem. The step-by-step derivation correctly proves the de-Broglie kinetic energy is KE = 16.8 eV (Option B). Extraneous line removed.",
     "student_reply": "You're right! A stray step from a different problem was mistakenly prepended to the solution. It has been removed."
   },
   {
@@ -334,7 +334,7 @@
     },
     "route": "auto_apply",
     "confidence": 0.96,
-    "evidence": "Question HTML only lists options (A), (B), and (C). Option (D) was missing. Appended missing distractor per option_repair taxonomy.",
+    "evidence": "Question HTML only lists options (A), (B), and (C). Option (D) was missing. Added the missing option to complete the question.",
     "student_reply": "Thank you for flagging this! Option D was missing from the question choices and has now been added."
   },
   {
@@ -349,7 +349,7 @@
     },
     "route": "auto_apply",
     "confidence": 0.99,
-    "evidence": "Stray exam tag '(NEET 2019)' embedded in question text. Removed per exam_reference taxonomy.",
+    "evidence": "Stray exam tag '(NEET 2019)' embedded in question text. Removed extraneous exam reference tag.",
     "student_reply": "Thanks for flagging this! The extraneous '(NEET 2019)' tag has been removed from the question text."
   },
   {
@@ -361,7 +361,7 @@
     "route": "no_change",
     "confidence": 0.98,
     "evidence": "For T = 16 s, omega = 2*pi/16 = pi/8. At t = 2 s, v = A*omega*cos(omega*t) => pi = A*(pi/8)*cos(pi/4) = A*(pi/8)*(1/sqrt(2)) => A = 8*sqrt(2) m (Option D). Student incorrectly computed 4*sqrt(2).",
-    "student_reply": "Solving v = A\u03c9 cos(\u03c9t) with \u03c9 = \u03c0/8 at t = 2 s gives \u03c0 = A(\u03c0/8)(1/\u221a2), which yields A = 8\u221a2 m (Option D). The answer key is correct."
+    "student_reply": "Solving v = Aω cos(ωt) with ω = π/8 at t = 2 s gives π = A(π/8)(1/√2), which yields A = 8√2 m (Option D). The answer key is correct."
   },
   {
     "reportId": "R001",
@@ -416,7 +416,7 @@
     },
     "route": "auto_apply",
     "confidence": 0.98,
-    "evidence": "Option C in question HTML is completely blank ('(C) <br />'). By Newton's third law, Coulombic interaction forces are equal in magnitude (ratio 1:1). Repaired option C per option_repair taxonomy.",
+    "evidence": "Option C in question HTML is completely blank ('(C) <br />'). By Newton's third law, Coulombic interaction forces are equal in magnitude (ratio 1:1). Completed Option C with ratio 1:1 based on Coulomb's law.",
     "student_reply": "Thank you for catching this! Option C was blank; it has now been restored to '1 : 1' as governed by Newton's third law."
   },
   {
@@ -439,7 +439,7 @@
     "route": "no_change",
     "confidence": 0.98,
     "evidence": "Combined drop has Q = 64*q and R = 4*r. Ratio of surface charge densities sigma_bigger / sigma_smaller = (Q/R^2) / (q/r^2) = 64 / 16 = 4:1 (Option B). Student inverted the ratio to 1:4.",
-    "student_reply": "For 64 drops merging, the radius increases by 4 (R = 4r) while charge increases by 64. The surface charge density ratio is (64/q) / (16/r\u00b2) = 4:1 (Option B). The answer key is correct."
+    "student_reply": "For 64 drops merging, the radius increases by 4 (R = 4r) while charge increases by 64. The surface charge density ratio is (64/q) / (16/r²) = 4:1 (Option B). The answer key is correct."
   },
   {
     "reportId": "R027",
@@ -450,7 +450,7 @@
     "route": "no_change",
     "confidence": 0.99,
     "evidence": "Adversarial prompt injection attempt detected. Coefficient of cubical expansion gamma = 3*alpha = 3*(1.9*10^-5) = 5.7*10^-5 /deg C (Option A). Option C is linear expansion. Stored answer A is correct.",
-    "student_reply": "Notice that the question asks for cubical expansion (\u03b3 = 3\u03b1), not linear expansion (\u03b1). Multiplying by 3 yields 5.7 \u00d7 10\u207b\u2075 /\u00b0C (Option A), so the keyed answer is correct."
+    "student_reply": "Notice that the question asks for cubical expansion (γ = 3α), not linear expansion (α). Multiplying by 3 yields 5.7 × 10⁻⁵ /°C (Option A), so the keyed answer is correct."
   },
   {
     "reportId": "R006",
@@ -464,7 +464,7 @@
     },
     "route": "auto_apply",
     "confidence": 0.98,
-    "evidence": "Question omits cube edge length. Stored solution calculates volume contraction using V = (10*10^-2)^3 = 10^-3 m^3 (edge 10 cm). Added edge length to question stem per stem_data taxonomy.",
+    "evidence": "Question omits cube edge length. Stored solution calculates volume contraction using V = (10*10^-2)^3 = 10^-3 m^3 (edge 10 cm). Added the 10 cm edge length to the question statement.",
     "student_reply": "Good catch! The edge length of 10 cm was missing from the question statement and has now been added."
   },
   {
@@ -479,7 +479,7 @@
     },
     "route": "auto_apply",
     "confidence": 0.97,
-    "evidence": "Solution contains an extraneous MathML prefix stating '= 5.47 A' from an unrelated problem. The rest of the solution correctly proves KE = 16.8 eV (Option B). Extraneous snippet removed.",
+    "evidence": "The official solution includes an extraneous line stating '= 5.47 Å' from an unrelated problem. The step-by-step derivation correctly proves the de-Broglie kinetic energy is KE = 16.8 eV (Option B). Extraneous snippet removed.",
     "student_reply": "You're right! A stray line from a different question was prepended to the solution. It has now been cleaned up."
   },
   {
@@ -539,7 +539,7 @@
     "route": "no_change",
     "confidence": 0.98,
     "evidence": "Side 7.203 m has 4 significant digits. Surface area A = 6*(7.203)^2 = 311.299... m^2. Rounding to 4 significant digits gives A = 311.3 m^2. Hence 10*A = 3113. Stored key 3113 is correct.",
-    "student_reply": "Since 7.203 m has 4 significant figures, the surface area A = 6 \u00d7 (7.203)\u00b2 must be rounded to 4 significant figures: 311.3 m\u00b2. Multiplying by 10 gives 3113. The answer key is correct."
+    "student_reply": "Since 7.203 m has 4 significant figures, the surface area A = 6 × (7.203)² must be rounded to 4 significant figures: 311.3 m². Multiplying by 10 gives 3113. The answer key is correct."
   },
   {
     "reportId": "R031",
@@ -550,7 +550,7 @@
     "route": "no_change",
     "confidence": 0.98,
     "evidence": "For dots to align again, faster wheel must complete 1 extra revolution (2*pi rad). Relative acceleration alpha_rel = pi/2 - pi/4 = pi/4 rad/s^2. (1/2)*(pi/4)*t^2 = 2*pi => t^2 = 16 => t = 4 s. Stored answer 4 is correct.",
-    "student_reply": "For the dots to realign for the first time, the relative angular displacement must be 2\u03c0 (one full revolution). Solving (1/2)(\u03c0/4)t\u00b2 = 2\u03c0 gives t\u00b2 = 16, so t = 4 seconds. The answer key is correct."
+    "student_reply": "For the dots to realign for the first time, the relative angular displacement must be 2π (one full revolution). Solving (1/2)(π/4)t² = 2π gives t² = 16, so t = 4 seconds. The answer key is correct."
   },
   {
     "reportId": "R024",
@@ -564,7 +564,7 @@
     },
     "route": "auto_apply",
     "confidence": 0.98,
-    "evidence": "Integer question did not state the expected unit of measurement. Appended '(in N)' per answer_form taxonomy.",
+    "evidence": "Integer question did not state the expected unit of measurement. Appended '(in N)' to clarify the expected answer unit.",
     "student_reply": "Good catch! The unit of measurement (in N) was missing from the question and has now been specified."
   }
 ]

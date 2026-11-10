@@ -160,6 +160,84 @@ export function cleanQuestionHtml(html: string): string {
   return cleaned;
 }
 
+/**
+ * Strips raw XML, HTML, and MathML tags while converting mathematical entities,
+ * superscripts, subscripts, and symbols into clean, human-readable academic notation.
+ * Used to ensure professors never see raw XML markup like `<math xmlns=...>` or `<span>`.
+ */
+export function cleanMathToReadable(html: string): string {
+  if (!html) return '';
+  let s = html;
+
+  // 1. Decode numeric & hex entities (e.g. &#x0003D; -> '=', &#x000D7; -> '×')
+  s = s.replace(/&#x0*([0-9a-fA-F]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16)));
+  s = s.replace(/&#([0-9]+);/g, (_, d) => String.fromCharCode(parseInt(d, 10)));
+
+  // 2. Decode standard symbols & macros
+  s = s.replace(/\\AA\b/g, 'Å');
+  s = s.replace(/&times;/gi, '×');
+  s = s.replace(/&minus;/gi, '−');
+  s = s.replace(/&plusmn;/gi, '±');
+  s = s.replace(/&deg;/gi, '°');
+  s = s.replace(/&epsilon;/gi, 'ε');
+  s = s.replace(/&lambda;/gi, 'λ');
+  s = s.replace(/&phi;/gi, 'φ');
+  s = s.replace(/&theta;/gi, 'θ');
+  s = s.replace(/&alpha;/gi, 'α');
+  s = s.replace(/&beta;/gi, 'β');
+  s = s.replace(/&gamma;/gi, 'γ');
+  s = s.replace(/&omega;/gi, 'ω');
+  s = s.replace(/&Omega;/gi, 'Ω');
+  s = s.replace(/&mu;/gi, 'μ');
+
+  const supMap: Record<string, string> = {
+    '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+    '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
+    '+': '⁺', '-': '⁻', '−': '⁻', 'n': 'ⁿ'
+  };
+
+  // 3. Convert <msup> base and exponent into clean unicode superscripts
+  s = s.replace(/<msup>\s*(?:<mn>|<mi>)([^<]+)(?:<\/mn>|<\/mi>)\s*<mrow>(.*?)<\/mrow>\s*<\/msup>/gi, (_, base, expHtml) => {
+    const rawExp = expHtml.replace(/<[^>]+>/g, '').trim();
+    const supExp = rawExp.split('').map((c: string) => supMap[c] || c).join('');
+    return `${base}${supExp}`;
+  });
+  s = s.replace(/<msup>\s*(?:<mn>|<mi>)([^<]+)(?:<\/mn>|<\/mi>)\s*(?:<mn>|<mi>)([^<]+)(?:<\/mn>|<\/mi>)\s*<\/msup>/gi, (_, base, exp) => {
+    const supExp = exp.split('').map((c: string) => supMap[c] || c).join('');
+    return `${base}${supExp}`;
+  });
+
+  const subMap: Record<string, string> = {
+    '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄',
+    '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉',
+    '+': '₊', '-': '₋', '−': '₋', 'a': 'ₐ', 'e': 'ₑ',
+    'o': 'ₒ', 'x': 'ₓ', 'i': 'ᵢ', 'r': 'ᵣ', 'v': 'ᵥ'
+  };
+
+  // 4. Convert <msub> base and subscript
+  s = s.replace(/<msub>\s*(?:<mn>|<mi>)([^<]+)(?:<\/mn>|<\/mi>)\s*(?:<mn>|<mi>)([^<]+)(?:<\/mn>|<\/mi>)\s*<\/msub>/gi, (_, base, sub) => {
+    const subChars = sub.split('').map((c: string) => subMap[c.toLowerCase()] || c).join('');
+    return `${base}${subChars}`;
+  });
+
+  // 5. Fractions <mfrac><mrow>A</mrow><mrow>B</mrow></mfrac> -> A / B
+  s = s.replace(/<mfrac>\s*<mrow>(.*?)<\/mrow>\s*<mrow>(.*?)<\/mrow>\s*<\/mfrac>/gi, (_, num, den) => {
+    const cleanNum = num.replace(/<[^>]+>/g, '').trim();
+    const cleanDen = den.replace(/<[^>]+>/g, '').trim();
+    return `(${cleanNum} / ${cleanDen})`;
+  });
+
+  // 6. Strip all remaining XML / HTML tags
+  s = s.replace(/<[^>]+>/g, ' ');
+
+  // 7. Spacing cleanups
+  s = s.replace(/\s+/g, ' ').trim();
+  s = s.replace(/\s*([=×+\-−])\s*/g, ' $1 ');
+  s = s.replace(/\s+/g, ' ').trim();
+
+  return s;
+}
+
 interface FormattedMathTextProps {
   text: string;
   className?: string;

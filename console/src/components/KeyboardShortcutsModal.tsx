@@ -13,9 +13,9 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({
   if (!isOpen) return null;
 
   const shortcuts = [
-    { key: 'A', description: 'Approve fix and apply proposed change' },
-    { key: 'E', description: 'Modify surgical replacement string before approving' },
-    { key: 'R', description: 'Reject / mark no change and archive ticket' },
+    { key: 'A', description: 'Approve fix and apply proposed change to question bank' },
+    { key: 'E', description: 'Adjust proposed question modification before approving' },
+    { key: 'R', description: 'Reject / verify question is sound without modifications' },
     { key: 'J / ↓', description: 'Navigate to next question in queue' },
     { key: 'K / ↑', description: 'Navigate to previous question in queue' },
     { key: '?', description: 'Toggle this keyboard shortcuts dialog' },
