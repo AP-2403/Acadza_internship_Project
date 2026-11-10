@@ -576,10 +576,10 @@
     "subConcept": null,
     "level": "EASY",
     "error": 1,
-    "updatedAt": "2026-11-10T18:39:58.175825+00:00",
+    "updatedAt": "2026-11-10T18:54:45.525598+00:00",
     "integerQuestion": {
       "question": "<h3><span style=\"color:#000000\">A body of mass 2 kg is kept by pressing to a vertical wall by a force of 100 N. The friction between wall and body is 0.3. Then the frictional force is equal to (in N)</span></h3>\n",
-      "solution": "<h3>The maximum friction available to prevent sliding is given by:<br />\n<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>f</mi><mrow><mi>m</mi><mi>a</mi><mi>x</mi></mrow></msub><mo>=</mo><mi>&#956;</mi><mo>&#215;</mo><mi>N</mi><mo>=</mo><mn>0</mn><mo>.</mo><mn>3</mn><mo>&#215;</mo><mn>100</mn><mo>=</mo><mn>30</mn><mo>&#160;</mo><mi>N</mi></math><br />\nThe force pulling the body down is its&nbsp;weight,<br />\n<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>W</mi><mo>=</mo><mi>m</mi><mi>g</mi><mo>=</mo><mn>2</mn><mo>&#215;</mo><mn>10</mn><mo>=</mo><mn>20</mn><mo>&#160;</mo><mi>N</mi></math><br />\nStatic friction is a self-adjusting force that only acts to balance the applied force, up to its maximum value. Since the weight (W = 20 N)&nbsp;is<strong>&nbsp;</strong>less&nbsp;than the maximum available friction (<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>f</mi><mrow><mi>m</mi><mi>a</mi><mi>x</mi></mrow></msub><mo>=</mo><mn>30</mn><mo>&#160;</mo><mi>N</mi></math>),&nbsp;the body remains at rest. Therefore, the actual frictional force is exactly equal to the weight.<br />\n​​​​​​​</h3>\n",
+      "solution": "<h3>Maximum available friction f_max = mu * N = 0.3 * 100 = 30 N. Since downward weight W = mg = 20 N < 30 N, the body does not slide. Static friction self-adjusts to equal the applied load: f = 20 N.</h3>",
       "answer": "20",
       "quesImages": [],
       "solutionImages": []
@@ -639,11 +639,11 @@
     "subConcept": null,
     "level": "EASY",
     "error": 1,
-    "updatedAt": "2025-10-23T09:32:22.361Z",
+    "updatedAt": "2026-11-10T18:51:48.421848+00:00",
     "scq": {
       "question": "<h3><span style=\"color:#000000\">In a LCR circuit the pd between the terminals of the inductance is 60 V, between the terminals of the capacitor is 30V and that between the terminals of resistance is 40V. the supply voltage will be equal to &hellip;&hellip;<span style=\"color:#000000\"></h3><h3>(A)<span style=\"color:#000000\"> <span style=\"color:#000000\">50 V<br />(B)<span style=\"color:#000000\"> <span style=\"color:#000000\">70 V<br />(C)<span style=\"color:#000000\"> </span><span style=\"color:#000000\">130 V<br />(D)</span></span></span><span style=\"color:#000000\"> </span></span></span><span style=\"color:#000000\">10 V</span></span></span></h3>",
-      "solution": "<h3><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mi>V</mi><mo>&#x0003D;</mo><msqrt><mrow><msubsup><mi>V</mi><mrow><mi>R</mi></mrow><mrow><mn>2</mn></mrow></msubsup><mo>&#x0002B;</mo><msup><mrow><mo stretchy=\"true\" fence=\"true\" form=\"prefix\">&#x00028;</mo><msub><mi>V</mi><mrow><mi>L</mi></mrow></msub><mo>&#x02212;</mo><msub><mi>V</mi><mrow><mi>C</mi></mrow></msub><mo stretchy=\"true\" fence=\"true\" form=\"postfix\">&#x00029;</mo></mrow><mrow><mn>2</mn></mrow></msup></mrow></msqrt></mrow></mstyle></math> <math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mo>&#x0003D;</mo><msqrt><mrow><mo stretchy=\"false\">&#x00028;</mo><mn>40</mn><msup><mo stretchy=\"false\">&#x00029;</mo><mrow><mn>2</mn></mrow></msup><mo>&#x0002B;</mo><mo stretchy=\"false\">&#x00028;</mo><mn>60</mn><mo>&#x02212;</mo><mn>30</mn><msup><mo stretchy=\"false\">&#x00029;</mo><mrow><mn>2</mn></mrow></msup></mrow></msqrt><mo>&#x0003D;</mo><mn>50</mn><mrow><mtext>&#x000A0;</mtext><mi mathvariant=\"normal\">V</mi></mrow></mrow></mstyle></math></h3>",
-      "answer": "C",
+      "solution": "<h3>Supply voltage V = sqrt(V_R^2 + (V_L - V_C)^2) = sqrt(40^2 + (60 - 30)^2) = 50 V. Hence, correct option is (A).</h3>",
+      "answer": "A",
       "quesImages": [],
       "solutionImages": []
     },

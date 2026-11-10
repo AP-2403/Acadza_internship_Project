@@ -470,3 +470,71 @@ export async function fetchQuestionsList(): Promise<any[]> {
 
   return questionsRaw as any[];
 }
+
+export interface AIAssistResponse {
+  success: boolean;
+  questionId: string;
+  normalizedSpeech: string;
+  sanity: {
+    hasDiscrepancy: boolean;
+    questionBack: string | null;
+    suggestedCorrection: string | null;
+    verifiedPoints: string[];
+    isSound: boolean;
+    formulaStatus: 'verified_sound' | 'needs_clarification';
+  };
+  studentReply: string;
+  studentIsCorrect: boolean;
+  newAnswerKey: string | null;
+  officialSolutionHtml: string;
+}
+
+export async function callAIAssist(
+  questionId: string,
+  facultyInput: string,
+  studentDoubt?: string,
+  reportId?: string
+): Promise<AIAssistResponse | null> {
+  try {
+    const online = await isBackendOnline();
+    if (online) {
+      const res = await fetch(`${API_BASE}/professor/ai-assist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questionId, facultyInput, studentDoubt, reportId })
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    }
+  } catch (err) {
+    console.warn('AI Assist error:', err);
+  }
+  return null;
+}
+
+export async function updateQuestionSolutionInDb(
+  questionId: string,
+  solutionText: string,
+  answerKey?: string,
+  questionStem?: string,
+  facultyName?: string,
+  reportId?: string
+): Promise<{ success: boolean; message: string; updatedQuestion?: any }> {
+  try {
+    const online = await isBackendOnline();
+    if (online) {
+      const res = await fetch(`${API_BASE}/professor/update-question-solution`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questionId, solutionText, answerKey, questionStem, facultyName, reportId })
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    }
+  } catch (err) {
+    console.warn('Update question solution error:', err);
+  }
+  return { success: false, message: 'Failed to update solution in database' };
+}

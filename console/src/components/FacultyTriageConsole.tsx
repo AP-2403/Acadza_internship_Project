@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Navbar } from './Navbar';
 import { QueueSidebar } from './QueueSidebar';
 import { QuestionViewer } from './QuestionViewer';
@@ -11,7 +11,16 @@ import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 
 import { QuestionData, StudentReport, ReportResult, AuditEntry, EditProposal, User, LiveDoubt } from '../types';
 import { groupReportsByQuestion } from '../lib/urgency';
-import { fetchLiveDoubts, fetchQueueData, sendProfessorReply, approveQuestionFix, rejectQuestionReport } from '../lib/api';
+import { 
+  fetchLiveDoubts, 
+  fetchQueueData, 
+  sendProfessorReply, 
+  approveQuestionFix, 
+  rejectQuestionReport,
+  callAIAssist,
+  updateQuestionSolutionInDb,
+  AIAssistResponse
+} from '../lib/api';
 import { FormattedMathText } from './FormattedMath';
 
 // Import bundled static datasets
@@ -30,7 +39,13 @@ import {
   X,
   ArrowUpDown,
   Calendar,
-  RotateCcw
+  RotateCcw,
+  Mic,
+  MicOff,
+  Sparkles,
+  Database,
+  AlertTriangle,
+  Check
 } from 'lucide-react';
 
 interface FacultyTriageConsoleProps {
@@ -229,10 +244,93 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
     return list;
   }, [liveDoubts, doubtsFilter, doubtsSort]);
 
+  // Modal speech dictation and AI assist state
+  const [isModalRecording, setIsModalRecording] = useState(false);
+  const modalRecognitionRef = useRef<any>(null);
+  const [modalAiResult, setModalAiResult] = useState<AIAssistResponse | null>(null);
+  const [isModalAnalyzing, setIsModalAnalyzing] = useState(false);
+  const [modalUpdateDb, setModalUpdateDb] = useState(false);
+
+  // Toggle voice dictation in modal
+  const toggleModalRecording = () => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert('Voice dictation is supported in modern browsers like Google Chrome, Safari, and Microsoft Edge.');
+      return;
+    }
+
+    if (isModalRecording && modalRecognitionRef.current) {
+      try {
+        modalRecognitionRef.current.stop();
+      } catch {}
+      setIsModalRecording(false);
+    } else {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event: any) => {
+        let finalTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript + ' ';
+          }
+        }
+        if (finalTranscript) {
+          setReplyText((prev) => (prev ? prev + ' ' + finalTranscript.trim() : finalTranscript.trim()));
+        }
+      };
+
+      recognition.onerror = () => setIsModalRecording(false);
+      recognition.onend = () => setIsModalRecording(false);
+
+      modalRecognitionRef.current = recognition;
+      try {
+        recognition.start();
+        setIsModalRecording(true);
+      } catch {
+        setIsModalRecording(false);
+      }
+    }
+  };
+
+  // Run AI Formula Check & Pedagogical Synthesis in modal
+  const handleModalAiAnalyze = async () => {
+    if (!replyingDoubt || !replyText.trim()) return;
+    setIsModalAnalyzing(true);
+    const result = await callAIAssist(
+      replyingDoubt.questionId,
+      replyText,
+      replyingDoubt.comment,
+      replyingDoubt.reportId
+    );
+    setIsModalAnalyzing(false);
+    if (result) {
+      setModalAiResult(result);
+      setReplyText(result.studentReply);
+      if (result.studentIsCorrect) {
+        setReplyVerdict('error_verified');
+      }
+    }
+  };
+
+  // 1-Click Accept Suggested Correction in modal
+  const handleAcceptModalCorrection = () => {
+    if (!modalAiResult?.sanity.suggestedCorrection) return;
+    const newText = replyText + ' -> ' + modalAiResult.sanity.suggestedCorrection;
+    setReplyText(newText);
+    handleModalAiAnalyze();
+  };
+
   // Open Reply Modal for Doubt
   const handleOpenReplyModal = (doubt: LiveDoubt) => {
     setReplyingDoubt(doubt);
     setReplyVerdict('error_verified');
+    setModalAiResult(null);
+    setModalUpdateDb(false);
     setReplyText(
       'You were completely right! We verified your doubt against the formula and have updated the question in our question bank. Thank you for catching this error!'
     );
@@ -255,6 +353,19 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
     if (!replyingDoubt || !replyText.trim()) return;
 
     setIsSendingReply(true);
+
+    // If faculty selected to update official solution in Question Bank
+    if (modalUpdateDb && modalAiResult?.officialSolutionHtml) {
+      await updateQuestionSolutionInDb(
+        replyingDoubt.questionId,
+        modalAiResult.officialSolutionHtml,
+        modalAiResult.newAnswerKey || undefined,
+        undefined,
+        user.name,
+        replyingDoubt.reportId
+      );
+    }
+
     await sendProfessorReply(
       replyingDoubt.reportId,
       replyText.trim(),
@@ -263,7 +374,12 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
     );
     setIsSendingReply(false);
     setReplyingDoubt(null);
+    setModalAiResult(null);
+    setModalUpdateDb(false);
     await loadQueueData();
+
+    setActionNotice('Explanation sent to student and question bank updated!');
+    setTimeout(() => setActionNotice(null), 4000);
   };
 
   // Action handlers for AI triage & question patching
@@ -571,6 +687,8 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
                     <StudentReplyCard
                       reply={currentGroup.primaryResult.student_reply}
                       onUpdateReply={handleUpdateStudentReply}
+                      questionGroup={currentGroup}
+                      facultyName={user.name}
                     />
                   </div>
 
@@ -893,18 +1011,131 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
                 </div>
               </div>
 
-              {/* Reply Textarea */}
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">
-                  Explanation Message for Student:
-                </label>
-                <textarea
-                  rows={4}
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  className="w-full p-3 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-900"
-                  placeholder="Type explanation to explain concept or confirm correction..."
-                />
+              {/* Reply Textarea & Voice/AI Controls */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700 block">
+                    Explanation Message for Student:
+                  </label>
+                  
+                  <div className="flex items-center gap-1.5">
+                    {/* Voice Dictation Button */}
+                    <button
+                      type="button"
+                      onClick={toggleModalRecording}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all shadow-xs ${
+                        isModalRecording
+                          ? 'bg-rose-600 text-white animate-pulse ring-2 ring-rose-400'
+                          : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200'
+                      }`}
+                    >
+                      {isModalRecording ? (
+                        <>
+                          <MicOff className="w-3 h-3" />
+                          <span>Listening... Click to Stop</span>
+                        </>
+                      ) : (
+                        <>
+                          <Mic className="w-3 h-3" />
+                          <span>Dictate with Voice</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* AI Polish & Formula Verify Button */}
+                    <button
+                      type="button"
+                      disabled={isModalAnalyzing || !replyText.trim()}
+                      onClick={handleModalAiAnalyze}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-xs disabled:opacity-40"
+                    >
+                      <Sparkles className={`w-3 h-3 ${isModalAnalyzing ? 'animate-spin' : ''}`} />
+                      <span>{isModalAnalyzing ? 'Verifying...' : 'AI Verify & Polish'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <textarea
+                    rows={4}
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    className="w-full p-3 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-900 leading-relaxed"
+                    placeholder="Type or speak your approach e.g. 'Supply voltage in series LCR is root of 40 squared plus 30 squared which is 50 V so student is right and answer is option A'..."
+                  />
+
+                  {isModalRecording && (
+                    <div className="absolute top-2 right-2 flex items-center gap-1 text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                      <span className="w-2 h-2 rounded-full bg-rose-600 animate-ping"></span>
+                      <span>Recording Voice...</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* AI Sanity Check & Question-Back in Modal */}
+                {modalAiResult && (
+                  <div className="space-y-2 mt-2">
+                    {modalAiResult.sanity.hasDiscrepancy ? (
+                      <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 space-y-1.5">
+                        <div className="flex items-start gap-1.5 font-bold">
+                          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                          <div>
+                            <span className="uppercase text-[10px] text-amber-700 font-extrabold block">
+                              AI Formula Sanity Check
+                            </span>
+                            <p className="mt-0.5 leading-relaxed">{modalAiResult.sanity.questionBack}</p>
+                          </div>
+                        </div>
+
+                        {modalAiResult.sanity.suggestedCorrection && (
+                          <div className="flex items-center justify-between bg-white/90 p-2 rounded-lg border border-amber-200 text-[11px]">
+                            <span className="font-mono text-slate-700">
+                              Suggestion: <strong>{modalAiResult.sanity.suggestedCorrection}</strong>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={handleAcceptModalCorrection}
+                              className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-bold text-[10px] flex items-center gap-1 shadow-xs"
+                            >
+                              <Check className="w-3 h-3" />
+                              <span>Accept</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <div>
+                          <span className="font-bold">Formula & Calculations Verified Sound: </span>
+                          <span className="text-emerald-800">
+                            {modalAiResult.sanity.verifiedPoints.join(' • ') || 'Physics steps and numbers are verified.'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Update Question Bank DB checkbox */}
+                    <div className="p-2.5 bg-blue-50/70 border border-blue-200 rounded-xl flex items-start gap-2">
+                      <input
+                        type="checkbox"
+                        id="modalUpdateDb"
+                        checked={modalUpdateDb}
+                        onChange={(e) => setModalUpdateDb(e.target.checked)}
+                        className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <label htmlFor="modalUpdateDb" className="cursor-pointer text-[11px] text-slate-700">
+                        <span className="font-bold text-slate-900 flex items-center gap-1">
+                          <Database className="w-3 h-3 text-indigo-600" />
+                          <span>Update Question Bank in Database with this solution</span>
+                        </span>
+                        <span className="text-slate-500 block">
+                          Permanently saves this derivation in the question bank for all future tests.
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                )}
               </div>
 
             </div>

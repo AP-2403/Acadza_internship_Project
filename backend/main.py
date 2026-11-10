@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 
 from .database import get_conn, init_db
 from .auth import create_token, store_session, get_current_user, remove_session
+from .ai_copilot import normalize_speech_math, check_formula_sanity, synthesize_student_explanation
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
@@ -171,6 +172,20 @@ class ProfessorReplyRequest(BaseModel):
     verdict: str  # 'error_verified' (student was correct) or 'concept_clarified' (question is sound)
     facultyName: Optional[str] = "Faculty Lead"
     action: Optional[str] = "reply"
+
+class AIAssistRequest(BaseModel):
+    questionId: str
+    facultyInput: str
+    studentDoubt: Optional[str] = None
+    reportId: Optional[str] = None
+
+class UpdateQuestionSolutionRequest(BaseModel):
+    questionId: str
+    solutionText: str
+    answerKey: Optional[str] = None
+    questionStem: Optional[str] = None
+    facultyName: Optional[str] = "Faculty Lead"
+    reportId: Optional[str] = None
 
 # --- Helper to extract question details ---
 def extract_question_details(q: Dict[str, Any]):
@@ -697,6 +712,99 @@ def reject_report(req: RejectReportRequest):
         "questionId": req.questionId,
         "reportId": req.reportId,
         "message": "Report dismissed and marked sound."
+    }
+
+@app.post("/api/professor/ai-assist")
+def ai_assist(req: AIAssistRequest):
+    """
+    AI Co-Pilot for Faculty:
+    1. Analyzes voice or text input containing formulas/derivations.
+    2. Validates mathematical equations and consistency.
+    3. Triggers smart question-back only if a genuine formula discrepancy is found.
+    4. Synthesizes a pedagogical step-by-step reply for the student.
+    5. Proposes official solution update for question bank.
+    """
+    q = QUESTIONS_MAP.get(req.questionId)
+    if not q:
+        raise HTTPException(status_code=404, detail="Question not found")
+
+    sanity = check_formula_sanity(q, req.facultyInput)
+    synthesis = synthesize_student_explanation(q, req.facultyInput, sanity, req.studentDoubt)
+
+    return {
+        "success": True,
+        "questionId": req.questionId,
+        "normalizedSpeech": synthesis["normalizedFacultyInput"],
+        "sanity": sanity,
+        "studentReply": synthesis["studentReply"],
+        "studentIsCorrect": synthesis["studentIsCorrect"],
+        "newAnswerKey": synthesis["newAnswerKey"],
+        "officialSolutionHtml": synthesis["officialSolutionHtml"]
+    }
+
+@app.post("/api/professor/update-question-solution")
+def update_question_solution(req: UpdateQuestionSolutionRequest):
+    """
+    Updates the stored official solution and/or answer key directly in the database,
+    making changes in questions.json and updating corresponding student reports.
+    """
+    global QUESTIONS_DATA, QUESTIONS_MAP
+    q = QUESTIONS_MAP.get(req.questionId)
+    if not q:
+        raise HTTPException(status_code=404, detail="Question not found")
+
+    q_type = q.get("questionType", "scq")
+    target_payload = q.get(q_type)
+    if target_payload is None:
+        target_payload = {}
+        q[q_type] = target_payload
+
+    if req.solutionText and req.solutionText.strip():
+        target_payload["solution"] = req.solutionText.strip()
+
+    if req.answerKey and req.answerKey.strip():
+        target_payload["answer"] = req.answerKey.strip()
+
+    if req.questionStem and req.questionStem.strip():
+        target_payload["question"] = req.questionStem.strip()
+
+    q["updatedAt"] = datetime.now(timezone.utc).isoformat()
+
+    try:
+        with open(QUESTIONS_PATH, "w", encoding="utf-8") as f:
+            json.dump(QUESTIONS_DATA, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"Warning: could not write questions.json: {e}")
+
+    # Update SQLite database
+    conn = get_conn()
+    cur = conn.cursor()
+    now_iso = datetime.now(timezone.utc).isoformat()
+    faculty_display = req.facultyName or "Faculty Lead"
+    reply_msg = (
+        f"Correction confirmed! {faculty_display} updated the official solution and approach in our question bank. "
+        "The derivation has been revised."
+    )
+
+    cur.execute("""
+        UPDATE reports
+        SET status = 'auto_applied',
+            route = 'auto_apply',
+            verdict = 'error_verified',
+            faculty_name = ?,
+            resolved_at = ?,
+            student_reply = ?
+        WHERE question_id = ? OR (report_id IS NOT NULL AND report_id = ?)
+    """, (faculty_display, now_iso, reply_msg, req.questionId, req.reportId or ""))
+
+    conn.commit()
+    conn.close()
+
+    return {
+        "success": True,
+        "questionId": req.questionId,
+        "updatedQuestion": extract_question_details(q),
+        "message": "Question solution and question bank updated successfully in database!"
     }
 
 @app.get("/api/professor/stats")
