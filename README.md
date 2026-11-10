@@ -1,8 +1,77 @@
 # Acadza AI Intern Assignment: "Report → Fix" Loop
 
-**Deadline:** as stated in the email you received. **AI tools:** allowed and expected. **Stack:** your choice.
+> **Candidate Submission by:** Ayyam ([GitHub: AP-2403](https://github.com/AP-2403))  
+> **Repository:** [https://github.com/AP-2403/Acadza_internship_Project](https://github.com/AP-2403/Acadza_internship_Project)  
+> **Live Faculty Console:** [https://ap-2403.github.io/Acadza_internship_Project/](https://ap-2403.github.io/Acadza_internship_Project/)
 
 ---
+
+## 📌 Deliverables Navigation
+
+| Deliverable | Location | Description |
+|---|---|---|
+| **1. `results.json`** | [`results.json`](./results.json) | Ground-truth triage output for all **44 reports** with surgical edits and empathetic replies. |
+| **2. `PRODUCT.md`** | [`PRODUCT.md`](./PRODUCT.md) | **1-Page Product Memo** (High stakes of JEE/NEET marking, auto-apply boundaries, FERR metric, Ghost Defect Miner). |
+| **3. `PROMPTS.md`** | [`PROMPTS.md`](./PROMPTS.md) | **Mandatory Prompt Audit** (verbatim internal prompts, assistant directives, 3 failure post-mortems, design decisions log). |
+| **4. `SUBMISSION.md`** | [`SUBMISSION.md`](./SUBMISSION.md) | **Application Responses & Video Script** (4 email questions answered, 3-minute video script, checklist). |
+| **5. Faculty Console** | [`console/`](./console/) | **Production Web App** with Native MathML rendering, surgical diffs, grouped urgency queue, and audit log. |
+| **6. Triage Engine** | [`engine/`](./engine/) | **Deterministic Guardrailed Python Pipeline** enforcing closed taxonomy and field scopes. |
+
+---
+
+## ⚡ Quickstart Guide
+
+### 1. Run the Triage Engine (CLI)
+Processes all reports in `data/reports.json` and regenerates `results.json`:
+```bash
+python3 engine/run_triage.py
+```
+
+### 2. Run the Faculty Review Console (Web UI)
+Launch the local development server:
+```bash
+cd console
+npm install
+npm run dev
+# Open http://localhost:3000
+```
+
+### 3. Build the Console for Production
+Generates optimized static assets in `console/dist`:
+```bash
+cd console
+npm run build
+```
+
+---
+
+## 📊 Triage Engine Execution Summary
+
+```text
+======================================================================
+ACADZA REPORT-FIX TRIAGE ENGINE: FULL RUN
+======================================================================
+Total Reports Evaluated : 44
+  * Auto-Apply Fixes    : 21 (47.7%)   [High-confidence, surgical edits within taxonomy field bounds]
+  * Faculty Review Queue: 5  (11.4%)   [Strictly enforces auto: false on syllabus, chapter, diagrams]
+  * No Change (Dismiss) : 18 (40.9%)   [Prompt injection defused, student miscalculations, app glitches]
+
+Breakdown by Verdict:
+  - defect          : 26 reports
+  - no_error        : 12 reports
+  - display_issue   :  2 reports
+  - already_fixed   :  1 reports
+  - app_issue       :  1 reports
+  - language_mode   :  1 reports
+  - not_actionable  :  1 reports
+======================================================================
+ALL GUARDRAILS & PERMISSION CHECKS PASSED: 100% COMPLIANT
+======================================================================
+```
+
+---
+
+## The original problem statement follows below:
 
 ## The problem (real, not invented)
 

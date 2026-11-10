@@ -8,8 +8,8 @@ This file contains the verbatim answers for the submission email and the 3-minut
 
 ### Repository & Project Links
 - **GitHub Repository (Public):** https://github.com/AP-2403/Acadza_internship_Project
-- **Live Faculty Review Console URL:** [Pending Deployment - Next Step]
-- **3-Minute Loom / Video Recording URL:** [Insert Video URL Here]
+- **Live Faculty Review Console URL:** https://ap-2403.github.io/Acadza_internship_Project/ (and 1-click Vercel/Netlify deploy via bundled `vercel.json` / `netlify.toml`)
+- **3-Minute Loom / Video Recording URL:** [Insert Video Link Here - see storyboard below]
 
 ### 1. This is a remote, Monday-to-Saturday role for people who want to build real product used by lakhs of students, not an internship to tick a college box. Is that you?
 **Yes, absolutely.** I build products designed to handle real production volume, edge cases, and messy student inputs rather than theoretical exercises. The prospect of directly protecting lakhs of students from losing marks, ranks, and confidence due to bad question data is what drives my engineering rigor. I thrive in high-ownership, Monday-to-Saturday product environments where code ships directly to users.
