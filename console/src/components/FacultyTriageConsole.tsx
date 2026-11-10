@@ -11,7 +11,7 @@ import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 
 import { QuestionData, StudentReport, ReportResult, AuditEntry, EditProposal, User, LiveDoubt } from '../types';
 import { groupReportsByQuestion } from '../lib/urgency';
-import { fetchLiveDoubts, fetchQueueData, sendProfessorReply } from '../lib/api';
+import { fetchLiveDoubts, fetchQueueData, sendProfessorReply, approveQuestionFix, rejectQuestionReport } from '../lib/api';
 import { FormattedMathText } from './FormattedMath';
 
 // Import bundled static datasets
@@ -146,15 +146,46 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
     groups.length > 0 ? groups[0].questionId : null
   );
 
+  // Synchronize selectedGroupId when subject or active filter changes
   useEffect(() => {
-    if (groups.length > 0 && (!selectedGroupId || !groups.find((g) => g.questionId === selectedGroupId))) {
-      setSelectedGroupId(groups[0].questionId);
+    const activeSubgroups = groups.filter((g) => {
+      if (activeFilter === 'review') return g.primaryResult.route === 'faculty_review';
+      if (activeFilter === 'auto') return g.primaryResult.route === 'auto_apply';
+      if (activeFilter === 'dismissed') return g.primaryResult.route === 'no_change';
+      return true;
+    });
+
+    if (activeSubgroups.length > 0) {
+      if (!selectedGroupId || !activeSubgroups.find((g) => g.questionId === selectedGroupId)) {
+        setSelectedGroupId(activeSubgroups[0].questionId);
+      }
+    } else {
+      setSelectedGroupId(null);
     }
-  }, [groups, selectedGroupId]);
+  }, [groups, activeFilter]);
 
   const currentGroup = useMemo(() => {
     return groups.find((g) => g.questionId === selectedGroupId) || groups[0] || null;
   }, [groups, selectedGroupId]);
+
+  // Action status toast notification banner
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
+
+  // Helper to advance to the next question in the current filtered queue
+  const advanceToNextGroup = (finishedQid: string) => {
+    const remaining = groups.filter((g) => {
+      if (activeFilter === 'review') {
+        return g.questionId !== finishedQid && g.primaryResult.route === 'faculty_review';
+      }
+      return g.questionId !== finishedQid;
+    });
+
+    if (remaining.length > 0) {
+      setSelectedGroupId(remaining[0].questionId);
+    } else {
+      setSelectedGroupId(null);
+    }
+  };
 
   // Sync to localStorage
   useEffect(() => {
@@ -235,14 +266,25 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
     await loadQueueData();
   };
 
-  // Action handlers for AI triage
-  const handleApprove = (comment?: string) => {
+  // Action handlers for AI triage & question patching
+  const handleApprove = async (comment?: string) => {
     if (!currentGroup) return;
     const res = currentGroup.primaryResult;
+    const qid = currentGroup.questionId;
 
+    // 1. Call backend to apply surgical patch to question and update reports
+    await approveQuestionFix(
+      qid,
+      res.reportId,
+      res.edit,
+      comment || 'Faculty approved AI repair recommendation.',
+      `${user.name} (${user.subject || 'Admin'})`
+    );
+
+    // 2. Record audit log entry
     const entry: AuditEntry = {
       id: `audit_${Date.now()}`,
-      questionId: currentGroup.questionId,
+      questionId: qid,
       reportId: res.reportId,
       reviewer: `${user.name} (${user.subject || 'Admin'})`,
       action: 'approve',
@@ -255,23 +297,41 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
 
     setAuditEntries((prev) => [entry, ...prev]);
 
+    // 3. Update local state
     setResultsState((prev) =>
       prev.map((item) => {
-        if (item.questionId === currentGroup.questionId) {
-          return { ...item, route: 'auto_apply' };
+        if (item.questionId === qid) {
+          return { ...item, route: 'auto_apply', verdict: 'error_verified' };
         }
         return item;
       })
     );
+
+    // 4. Reload queue data and remove from current review panel
+    await loadQueueData();
+    advanceToNextGroup(qid);
+
+    // 5. Toast notice
+    setActionNotice('Question patched & updated! Feedback removed from active review queue.');
+    setTimeout(() => setActionNotice(null), 4500);
   };
 
-  const handleEditApprove = (customEdit: EditProposal, comment?: string) => {
+  const handleEditApprove = async (customEdit: EditProposal, comment?: string) => {
     if (!currentGroup) return;
     const res = currentGroup.primaryResult;
+    const qid = currentGroup.questionId;
+
+    await approveQuestionFix(
+      qid,
+      res.reportId,
+      customEdit,
+      comment || 'Faculty modified and approved AI edit.',
+      `${user.name} (${user.subject || 'Admin'})`
+    );
 
     const entry: AuditEntry = {
       id: `audit_${Date.now()}`,
-      questionId: currentGroup.questionId,
+      questionId: qid,
       reportId: res.reportId,
       reviewer: `${user.name} (${user.subject || 'Admin'})`,
       action: 'edit_approve',
@@ -286,21 +346,35 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
 
     setResultsState((prev) =>
       prev.map((item) => {
-        if (item.questionId === currentGroup.questionId) {
-          return { ...item, route: 'auto_apply', edit: customEdit };
+        if (item.questionId === qid) {
+          return { ...item, route: 'auto_apply', edit: customEdit, verdict: 'error_verified' };
         }
         return item;
       })
     );
+
+    await loadQueueData();
+    advanceToNextGroup(qid);
+
+    setActionNotice('Custom fix applied & saved to question bank! Removed from active review panel.');
+    setTimeout(() => setActionNotice(null), 4500);
   };
 
-  const handleReject = (comment?: string) => {
+  const handleReject = async (comment?: string) => {
     if (!currentGroup) return;
     const res = currentGroup.primaryResult;
+    const qid = currentGroup.questionId;
+
+    await rejectQuestionReport(
+      qid,
+      res.reportId,
+      comment,
+      `${user.name} (${user.subject || 'Admin'})`
+    );
 
     const entry: AuditEntry = {
       id: `audit_${Date.now()}`,
-      questionId: currentGroup.questionId,
+      questionId: qid,
       reportId: res.reportId,
       reviewer: `${user.name} (${user.subject || 'Admin'})`,
       action: 'reject',
@@ -315,12 +389,18 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
 
     setResultsState((prev) =>
       prev.map((item) => {
-        if (item.questionId === currentGroup.questionId) {
-          return { ...item, route: 'no_change', edit: null };
+        if (item.questionId === qid) {
+          return { ...item, route: 'no_change', edit: null, verdict: 'concept_sound' };
         }
         return item;
       })
     );
+
+    await loadQueueData();
+    advanceToNextGroup(qid);
+
+    setActionNotice('Report rejected & question verified sound. Removed from review panel.');
+    setTimeout(() => setActionNotice(null), 4500);
   };
 
   const handleUpdateStudentReply = (newReply: string) => {
@@ -458,6 +538,23 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
 
           {/* Center / Right: Question Review Workspace */}
           <main className="flex-1 flex flex-col h-[calc(100vh-6.5rem)] overflow-hidden bg-white">
+            {/* Live Action Notice Banner */}
+            {actionNotice && (
+              <div className="bg-emerald-600 text-white px-4 py-2.5 text-xs font-semibold flex items-center justify-between shadow-md transition-all animate-in fade-in slide-in-from-top-2 shrink-0">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-100 shrink-0" />
+                  <span>{actionNotice}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActionNotice(null)}
+                  className="text-emerald-100 hover:text-white p-0.5 rounded transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
             {currentGroup ? (
               <div className="flex-1 flex flex-col h-full overflow-hidden">
                 

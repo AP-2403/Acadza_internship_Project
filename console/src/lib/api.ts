@@ -1,4 +1,4 @@
-import { User, QuestionTestResult, TestStats, LiveDoubt, StudentDoubtItem, StudentReport, ReportResult } from '../types';
+import { User, QuestionTestResult, TestStats, LiveDoubt, StudentDoubtItem, StudentReport, ReportResult, EditProposal } from '../types';
 import questionsRaw from '../data/questions.json';
 import reportsRaw from '../data/reports.json';
 import resultsRaw from '../data/results.json';
@@ -378,4 +378,95 @@ export async function sendProfessorReply(
   }
 
   return { success: true, message: 'Response saved locally!' };
+}
+
+export async function approveQuestionFix(
+  questionId: string,
+  reportId?: string,
+  edit?: EditProposal | null,
+  comment?: string,
+  facultyName?: string
+): Promise<{ success: boolean; message: string; updatedQuestion?: any }> {
+  try {
+    const online = await isBackendOnline();
+    if (online) {
+      const res = await fetch(`${API_BASE}/professor/approve-fix`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questionId, reportId, edit, comment, facultyName })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return {
+          success: true,
+          message: data.message || 'Fix approved and question updated in question bank!',
+          updatedQuestion: data.updatedQuestion
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('Backend approve-fix error, saving locally', err);
+  }
+
+  // Local fallback
+  const saved = localStorage.getItem('acadza_student_doubts');
+  if (saved) {
+    const doubts: LiveDoubt[] = JSON.parse(saved);
+    const updated = doubts.map(d => {
+      if (d.questionId === questionId || d.reportId === reportId) {
+        return {
+          ...d,
+          status: 'auto_applied' as const,
+          verdict: 'error_verified' as const,
+          studentReply: `Correction confirmed! ${facultyName || 'Faculty'} verified the feedback and applied the fix to our question bank.`
+        };
+      }
+      return d;
+    });
+    localStorage.setItem('acadza_student_doubts', JSON.stringify(updated));
+  }
+
+  return { success: true, message: 'Fix applied locally!' };
+}
+
+export async function rejectQuestionReport(
+  questionId: string,
+  reportId?: string,
+  reason?: string,
+  facultyName?: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const online = await isBackendOnline();
+    if (online) {
+      const res = await fetch(`${API_BASE}/professor/reject-report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questionId, reportId, reason, facultyName })
+      });
+      if (res.ok) {
+        return { success: true, message: 'Report dismissed and verified sound.' };
+      }
+    }
+  } catch (err) {
+    console.warn('Backend reject-report error', err);
+  }
+
+  return { success: true, message: 'Report dismissed locally.' };
+}
+
+export async function fetchQuestionsList(): Promise<any[]> {
+  try {
+    const online = await isBackendOnline();
+    if (online) {
+      const res = await fetch(`${API_BASE}/questions`);
+      if (res.ok) {
+        const data = await res.json();
+        return data.questions || [];
+      }
+    }
+  } catch (err) {
+    console.warn('Backend questions error, falling back to static questions', err);
+  }
+
+  return questionsRaw as any[];
 }

@@ -24,7 +24,7 @@ import {
   CheckCheck
 } from 'lucide-react';
 import { User, QuestionTestResult, TestStats, StudentDoubtItem } from '../types';
-import { submitStudentTest, submitStudentDoubt, fetchStudentDoubts } from '../lib/api';
+import { submitStudentTest, submitStudentDoubt, fetchStudentDoubts, fetchQuestionsList } from '../lib/api';
 import { FormattedHtmlMath, FormattedMathText } from './FormattedMath';
 import questionsRaw from '../data/questions.json';
 
@@ -60,7 +60,18 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
   const [myDoubts, setMyDoubts] = useState<StudentDoubtItem[]>([]);
   const [isLoadingDoubts, setIsLoadingDoubts] = useState(false);
 
-  const questions = useMemo(() => questionsRaw as any[], []);
+  // Dynamically load updated question bank (reflecting faculty approved fixes)
+  const [questionsList, setQuestionsList] = useState<any[]>(questionsRaw as any[]);
+
+  useEffect(() => {
+    fetchQuestionsList().then((data) => {
+      if (data && data.length > 0) {
+        setQuestionsList(data);
+      }
+    });
+  }, []);
+
+  const questions = questionsList;
 
   // Filtered solving questions by subject
   const [solvingSubject, setSolvingSubject] = useState<'all' | 'Physics' | 'Zoology' | 'Botany'>('all');

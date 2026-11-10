@@ -31,6 +31,89 @@ with open(QUESTIONS_PATH, "r", encoding="utf-8") as f:
     QUESTIONS_DATA: List[Dict[str, Any]] = json.load(f)
 QUESTIONS_MAP: Dict[str, Dict[str, Any]] = {q["_id"]: q for q in QUESTIONS_DATA}
 
+# Load AI triage results into memory for auto-edit proposals
+RESULTS_PATH = BASE_DIR / "results.json"
+RESULTS_DATA: List[Dict[str, Any]] = []
+if RESULTS_PATH.exists():
+    try:
+        with open(RESULTS_PATH, "r", encoding="utf-8") as f:
+            RESULTS_DATA = json.load(f)
+    except Exception:
+        pass
+RESULTS_BY_QID: Dict[str, Dict[str, Any]] = {r["questionId"]: r for r in RESULTS_DATA if r.get("questionId")}
+RESULTS_BY_RID: Dict[str, Dict[str, Any]] = {r["reportId"]: r for r in RESULTS_DATA if r.get("reportId")}
+
+def apply_question_patch(question_id: str, edit: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """
+    Applies surgical { field, find, replace } patch to the question:
+    - answer: updates answer key for SCQ, MCQ, or Integer question
+    - question: updates question stem (e.g. adding missing unit '(in N)', repairing typos)
+    - solution: updates derivation or removes stray MathML
+    - questionType: corrects question type (e.g. mcq -> scq)
+    Persists the updated question to questions.json and in-memory caches.
+    """
+    global QUESTIONS_DATA, QUESTIONS_MAP
+    q = QUESTIONS_MAP.get(question_id)
+    if not q:
+        return None
+
+    if edit and isinstance(edit, dict):
+        field = edit.get("field")
+        find_val = edit.get("find")
+        replace_val = edit.get("replace")
+
+        q_type = q.get("questionType", "scq")
+        target_payload = q.get(q_type)
+        if target_payload is None:
+            target_payload = {}
+            q[q_type] = target_payload
+
+        if field == "questionType":
+            q["questionType"] = replace_val
+        elif field == "answer":
+            if q_type == "mcq":
+                if isinstance(replace_val, list):
+                    target_payload["answer"] = replace_val
+                elif isinstance(replace_val, str) and replace_val.strip().startswith("["):
+                    try:
+                        import ast
+                        target_payload["answer"] = ast.literal_eval(replace_val)
+                    except Exception:
+                        target_payload["answer"] = [x.strip(" '\"") for x in replace_val.strip("[]").split(",") if x.strip()]
+                else:
+                    target_payload["answer"] = str(replace_val).strip()
+            elif q_type == "integerQuestion":
+                target_payload["answer"] = str(replace_val).strip()
+            else:
+                target_payload["answer"] = str(replace_val).strip()
+        elif field == "question":
+            current_q = target_payload.get("question", "")
+            if find_val and find_val in current_q:
+                target_payload["question"] = current_q.replace(find_val, replace_val)
+            elif find_val:
+                target_payload["question"] = current_q.replace(find_val.strip(), replace_val.strip())
+            else:
+                target_payload["question"] = current_q + f" {replace_val}"
+        elif field == "solution":
+            current_s = target_payload.get("solution", "")
+            if find_val and find_val in current_s:
+                target_payload["solution"] = current_s.replace(find_val, replace_val)
+            elif find_val:
+                target_payload["solution"] = current_s.replace(find_val.strip(), replace_val.strip())
+            else:
+                target_payload["solution"] = current_s + f" {replace_val}"
+
+        q["updatedAt"] = datetime.now(timezone.utc).isoformat()
+
+        # Persist to data/questions.json
+        try:
+            with open(QUESTIONS_PATH, "w", encoding="utf-8") as f:
+                json.dump(QUESTIONS_DATA, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Warning: could not write questions.json: {e}")
+
+    return q
+
 # Ensure DB is initialized on startup and ensure columns exist
 @app.on_event("startup")
 def on_startup():
@@ -68,6 +151,19 @@ class ProfessorActionRequest(BaseModel):
     reportId: str
     action: str  # 'approve', 'reject', 'mark_reviewed'
     comment: Optional[str] = None
+
+class ApproveFixRequest(BaseModel):
+    questionId: str
+    reportId: Optional[str] = None
+    edit: Optional[Dict[str, Any]] = None
+    comment: Optional[str] = None
+    facultyName: Optional[str] = "Faculty Lead"
+
+class RejectReportRequest(BaseModel):
+    questionId: str
+    reportId: Optional[str] = None
+    reason: Optional[str] = "Question and answer key verified sound."
+    facultyName: Optional[str] = "Faculty Lead"
 
 class ProfessorReplyRequest(BaseModel):
     reportId: str
@@ -169,8 +265,12 @@ def get_questions(subject: Optional[str] = None):
             "level": details["level"],
             "questionType": details["type"],
             "questionText": details["questionText"],
+            "solutionText": details["solutionText"],
+            "correctAnswer": details["correctAnswer"],
             "quesImages": details["quesImages"],
-            "hasSolution": bool(details["solutionText"])
+            "solutionImages": details["solutionImages"],
+            "hasSolution": bool(details["solutionText"]),
+            details["type"]: q.get(details["type"], {})
         })
     return {"total": len(items), "questions": items}
 
@@ -379,6 +479,25 @@ def reply_to_student(req: ProfessorReplyRequest):
     new_status = "auto_applied" if req.verdict == "error_verified" else "reviewed"
     new_route = "auto_apply" if req.verdict == "error_verified" else "no_change"
 
+    # If student is verified correct, automatically patch the question if an edit is found
+    if req.verdict == "error_verified":
+        cur.execute("SELECT question_id, edit_json FROM reports WHERE report_id = ?", (req.reportId,))
+        row = cur.fetchone()
+        if row:
+            qid = row["question_id"]
+            edit = None
+            if row["edit_json"]:
+                try:
+                    edit = json.loads(row["edit_json"])
+                except Exception:
+                    pass
+            if not edit:
+                res = RESULTS_BY_QID.get(qid) or RESULTS_BY_RID.get(req.reportId)
+                if res and res.get("edit"):
+                    edit = res["edit"]
+            if edit:
+                apply_question_patch(qid, edit)
+
     cur.execute("""
         UPDATE reports
         SET student_reply = ?,
@@ -460,6 +579,25 @@ def professor_action(req: ProfessorActionRequest):
     new_route = "auto_apply" if req.action == "approve" else "no_change" if req.action == "reject" else "faculty_review"
     now_iso = datetime.now(timezone.utc).isoformat()
 
+    # If approving, also trigger question patch if an edit is present
+    if req.action == "approve":
+        cur.execute("SELECT question_id, edit_json FROM reports WHERE report_id = ?", (req.reportId,))
+        row = cur.fetchone()
+        if row:
+            qid = row["question_id"]
+            edit = None
+            if row["edit_json"]:
+                try:
+                    edit = json.loads(row["edit_json"])
+                except Exception:
+                    pass
+            if not edit:
+                res = RESULTS_BY_QID.get(qid) or RESULTS_BY_RID.get(req.reportId)
+                if res and res.get("edit"):
+                    edit = res["edit"]
+            if edit:
+                apply_question_patch(qid, edit)
+
     cur.execute("""
         UPDATE reports
         SET status = ?, route = ?, resolved_at = ?
@@ -470,6 +608,96 @@ def professor_action(req: ProfessorActionRequest):
     conn.close()
 
     return {"success": True, "reportId": req.reportId, "newStatus": new_status, "newRoute": new_route}
+
+@app.post("/api/professor/approve-fix")
+def approve_fix(req: ApproveFixRequest):
+    """
+    Faculty reviews and approves a fix for a question:
+    - If answer marked as correct is wrong: updates answer key.
+    - If unit missing in integer question or stem typo: updates question stem.
+    - Persists updated question to question bank and updates report status to auto_applied.
+    - Removes report from active review queue.
+    """
+    edit_to_apply = req.edit
+    if not edit_to_apply:
+        res = RESULTS_BY_QID.get(req.questionId) or (RESULTS_BY_RID.get(req.reportId) if req.reportId else None)
+        if res and res.get("edit"):
+            edit_to_apply = res["edit"]
+
+    # 1. Apply surgical patch to question in memory and questions.json
+    updated_q = apply_question_patch(req.questionId, edit_to_apply)
+    if not updated_q:
+        raise HTTPException(status_code=404, detail=f"Question '{req.questionId}' not found in question bank")
+
+    # 2. Update SQLite reports table
+    conn = get_conn()
+    cur = conn.cursor()
+    now_iso = datetime.now(timezone.utc).isoformat()
+    faculty_display = req.facultyName or "Faculty Lead"
+    reply_msg = (
+        f"Correction confirmed! {faculty_display} reviewed your feedback and approved the fix. "
+        "The question and answer key have been updated in our question bank."
+    )
+    edit_str = json.dumps(edit_to_apply) if edit_to_apply else None
+
+    cur.execute("""
+        UPDATE reports
+        SET status = 'auto_applied',
+            route = 'auto_apply',
+            verdict = 'error_verified',
+            faculty_name = ?,
+            resolved_at = ?,
+            student_reply = ?,
+            edit_json = COALESCE(?, edit_json)
+        WHERE question_id = ? OR (report_id IS NOT NULL AND report_id = ?)
+    """, (faculty_display, now_iso, reply_msg, edit_str, req.questionId, req.reportId or ""))
+
+    conn.commit()
+    conn.close()
+
+    return {
+        "success": True,
+        "questionId": req.questionId,
+        "reportId": req.reportId,
+        "updatedQuestion": extract_question_details(updated_q),
+        "editApplied": edit_to_apply,
+        "message": "Question patched and updated! Feedback removed from review queue."
+    }
+
+@app.post("/api/professor/reject-report")
+def reject_report(req: RejectReportRequest):
+    """
+    Faculty rejects/dismisses report after confirming the question is sound.
+    """
+    conn = get_conn()
+    cur = conn.cursor()
+    now_iso = datetime.now(timezone.utc).isoformat()
+    faculty_display = req.facultyName or "Faculty Lead"
+    reply_msg = (
+        f"Thank you for your feedback. {faculty_display} checked the question formulation and official derivation. "
+        f"The question is sound and verified correct. Note: {req.reason or 'No defect found.'}"
+    )
+
+    cur.execute("""
+        UPDATE reports
+        SET status = 'dismissed',
+            route = 'no_change',
+            verdict = 'concept_sound',
+            faculty_name = ?,
+            resolved_at = ?,
+            student_reply = ?
+        WHERE question_id = ? OR (report_id IS NOT NULL AND report_id = ?)
+    """, (faculty_display, now_iso, reply_msg, req.questionId, req.reportId or ""))
+
+    conn.commit()
+    conn.close()
+
+    return {
+        "success": True,
+        "questionId": req.questionId,
+        "reportId": req.reportId,
+        "message": "Report dismissed and marked sound."
+    }
 
 @app.get("/api/professor/stats")
 def get_professor_stats(subject: Optional[str] = None):
