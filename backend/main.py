@@ -870,6 +870,13 @@ def update_question_solution(req: UpdateQuestionSolutionRequest):
     except Exception as e:
         print(f"Warning: could not write questions.json: {e}")
 
+    try:
+        console_path = BASE_DIR / "console" / "src" / "data" / "questions.json"
+        with open(console_path, "w", encoding="utf-8") as f:
+            json.dump(QUESTIONS_DATA, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"Warning: could not write console questions.json: {e}")
+
     # Update SQLite database
     conn = get_conn()
     cur = conn.cursor()

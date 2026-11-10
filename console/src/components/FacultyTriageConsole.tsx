@@ -8,6 +8,8 @@ import { ActionControls } from './ActionControls';
 import { AuditLogModal } from './AuditLogModal';
 import { BonusDefectsModal } from './BonusDefectsModal';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
+import { FocusTriageView } from './FocusTriageView';
+import { FacultySolutionCopilot } from './FacultySolutionCopilot';
 
 import { QuestionData, StudentReport, ReportResult, AuditEntry, EditProposal, User, LiveDoubt } from '../types';
 import { groupReportsByQuestion } from '../lib/urgency';
@@ -55,6 +57,8 @@ interface FacultyTriageConsoleProps {
 
 export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user, onLogout }) => {
   const [activeTab, setActiveTab] = useState<'triage' | 'live_doubts'>('triage');
+  const [viewMode, setViewMode] = useState<'focus' | 'split'>('focus');
+  const [showFocusCopilot, setShowFocusCopilot] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubject, setSelectedSubject] = useState<string>(user.subject || 'all');
@@ -587,32 +591,66 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
 
       {/* Mode Subheader Bar */}
       <div className="bg-white border-b border-slate-200 px-6 py-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab('triage')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors ${
-              activeTab === 'triage'
-                ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>AI Triage & Review Queue ({groups.length})</span>
-          </button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setActiveTab('triage')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors ${
+                activeTab === 'triage'
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>AI Triage Queue ({groups.length})</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('live_doubts')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors ${
-              activeTab === 'live_doubts'
-                ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span>Live Student Doubts & Replies ({liveDoubts.length})</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('live_doubts')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors ${
+                activeTab === 'live_doubts'
+                  ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Student Doubts ({liveDoubts.length})</span>
+            </button>
+          </div>
+
+          {/* Mode Switcher: Calm Focus vs Split Inspector */}
+          {activeTab === 'triage' && (
+            <div className="hidden sm:flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs">
+              <button
+                type="button"
+                onClick={() => setViewMode('focus')}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-bold flex items-center gap-1.5 transition-all ${
+                  viewMode === 'focus'
+                    ? 'bg-white text-indigo-700 shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+                title="Zen Focus Mode: single question view, minimal side-clutter"
+              >
+                <Sparkles className="w-3 h-3 text-indigo-600" />
+                <span>🧘 Calm Focus</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('split')}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-bold flex items-center gap-1.5 transition-all ${
+                  viewMode === 'split'
+                    ? 'bg-white text-blue-700 shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+                title="Split Inspector: full multi-column view"
+              >
+                <Layers className="w-3 h-3 text-blue-600" />
+                <span>📊 Split Inspector</span>
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -637,23 +675,8 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
 
       {/* Main Content Area */}
       {activeTab === 'triage' ? (
-        <div className="flex-1 flex overflow-hidden">
-          
-          {/* Left: Prioritized Queue Sidebar with Arrival Sorting */}
-          <QueueSidebar
-            groups={groups}
-            selectedGroupId={selectedGroupId}
-            onSelectGroup={(id) => setSelectedGroupId(id)}
-            activeFilter={activeFilter}
-            setActiveFilter={setActiveFilter}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            sortMethod={queueSortMethod}
-            onSortMethodChange={(s) => setQueueSortMethod(s)}
-          />
-
-          {/* Center / Right: Question Review Workspace */}
-          <main className="flex-1 flex flex-col h-[calc(100vh-6.5rem)] overflow-hidden bg-white">
+        viewMode === 'focus' ? (
+          <div className="flex-1 flex flex-col overflow-hidden bg-slate-50">
             {/* Live Action Notice Banner */}
             {actionNotice && (
               <div className="bg-emerald-600 text-white px-4 py-2.5 text-xs font-semibold flex items-center justify-between shadow-md transition-all animate-in fade-in slide-in-from-top-2 shrink-0">
@@ -672,47 +695,104 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
             )}
 
             {currentGroup ? (
-              <div className="flex-1 flex flex-col h-full overflow-hidden">
-                
-                {/* Question & Solution View */}
-                <div className="flex-1 overflow-y-auto">
-                  <QuestionViewer group={currentGroup} />
-                </div>
-
-                {/* Bottom Pane: Diff + Student Reply + Actions */}
-                <div className="shrink-0 bg-white border-t border-slate-200">
-                  <DiffViewer result={currentGroup.primaryResult} />
-                  
-                  <div className="p-4 pt-2">
-                    <StudentReplyCard
-                      reply={currentGroup.primaryResult.student_reply}
-                      onUpdateReply={handleUpdateStudentReply}
-                      questionGroup={currentGroup}
-                      facultyName={user.name}
-                    />
-                  </div>
-
-                  <ActionControls
-                    group={currentGroup}
-                    onApprove={handleApprove}
-                    onEditApprove={handleEditApprove}
-                    onReject={handleReject}
-                  />
-                </div>
-
-              </div>
+              <FocusTriageView
+                group={currentGroup}
+                groups={groups}
+                currentIndex={Math.max(0, groups.findIndex((g) => g.questionId === selectedGroupId))}
+                onSelectIndex={(idx) => {
+                  if (groups[idx]) setSelectedGroupId(groups[idx].questionId);
+                }}
+                onApprove={handleApprove}
+                onEditApprove={handleEditApprove}
+                onReject={handleReject}
+                onOpenCopilot={() => setShowFocusCopilot(true)}
+                onUpdateReply={handleUpdateStudentReply}
+                facultyName={user.name}
+              />
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8 text-center">
+              <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8 text-center bg-slate-50">
                 <CheckCircle2 className="w-12 h-12 text-slate-300 mb-2" />
-                <h3 className="text-sm font-bold text-slate-600">No questions in this subject queue</h3>
+                <h3 className="text-sm font-bold text-slate-600">All caught up! Zero questions awaiting review</h3>
                 <p className="text-xs text-slate-400 max-w-sm mt-1">
-                  All reports for {user.subject || selectedSubject} have either been resolved or no new reports match the active filter.
+                  Every student report for {user.subject || selectedSubject} has been verified and resolved.
                 </p>
               </div>
             )}
-          </main>
+          </div>
+        ) : (
+          <div className="flex-1 flex overflow-hidden">
+            {/* Left: Prioritized Queue Sidebar with Arrival Sorting */}
+            <QueueSidebar
+              groups={groups}
+              selectedGroupId={selectedGroupId}
+              onSelectGroup={(id) => setSelectedGroupId(id)}
+              activeFilter={activeFilter}
+              setActiveFilter={setActiveFilter}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              sortMethod={queueSortMethod}
+              onSortMethodChange={(s) => setQueueSortMethod(s)}
+            />
 
-        </div>
+            {/* Center / Right: Question Review Workspace */}
+            <main className="flex-1 flex flex-col h-[calc(100vh-6.5rem)] overflow-hidden bg-white">
+              {/* Live Action Notice Banner */}
+              {actionNotice && (
+                <div className="bg-emerald-600 text-white px-4 py-2.5 text-xs font-semibold flex items-center justify-between shadow-md transition-all animate-in fade-in slide-in-from-top-2 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-100 shrink-0" />
+                    <span>{actionNotice}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActionNotice(null)}
+                    className="text-emerald-100 hover:text-white p-0.5 rounded transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              {currentGroup ? (
+                <div className="flex-1 flex flex-col h-full overflow-hidden">
+                  {/* Question & Solution View */}
+                  <div className="flex-1 overflow-y-auto">
+                    <QuestionViewer group={currentGroup} />
+                  </div>
+
+                  {/* Bottom Pane: Diff + Student Reply + Actions */}
+                  <div className="shrink-0 bg-white border-t border-slate-200">
+                    <DiffViewer result={currentGroup.primaryResult} />
+                    
+                    <div className="p-4 pt-2">
+                      <StudentReplyCard
+                        reply={currentGroup.primaryResult.student_reply}
+                        onUpdateReply={handleUpdateStudentReply}
+                        questionGroup={currentGroup}
+                        facultyName={user.name}
+                      />
+                    </div>
+
+                    <ActionControls
+                      group={currentGroup}
+                      onApprove={handleApprove}
+                      onEditApprove={handleEditApprove}
+                      onReject={handleReject}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8 text-center">
+                  <CheckCircle2 className="w-12 h-12 text-slate-300 mb-2" />
+                  <h3 className="text-sm font-bold text-slate-600">No questions in this subject queue</h3>
+                  <p className="text-xs text-slate-400 max-w-sm mt-1">
+                    All reports for {user.subject || selectedSubject} have either been resolved or no new reports match the active filter.
+                  </p>
+                </div>
+              )}
+            </main>
+          </div>
+        )
       ) : (
         /* Live Doubts & Responses Tab with Arrival Sorting & Separations */
         <div className="flex-1 p-6 overflow-y-auto max-w-5xl mx-auto w-full space-y-4">
@@ -1160,6 +1240,27 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Focus Mode Voice & Solution Co-Pilot Modal */}
+      {showFocusCopilot && currentGroup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+            <FacultySolutionCopilot
+              questionGroup={currentGroup}
+              facultyName={user.name}
+              initialReply={currentGroup.primaryResult.student_reply}
+              studentDoubtText={currentGroup.reports[0]?.comment}
+              onApplyReply={(replyText, updatedOfficialSolution, newAnswerKey) => {
+                handleUpdateStudentReply(replyText);
+                setShowFocusCopilot(false);
+                setActionNotice("Faculty explanation & updated derivation ready to dispatch!");
+                setTimeout(() => setActionNotice(null), 4000);
+              }}
+              onClose={() => setShowFocusCopilot(false)}
+            />
           </div>
         </div>
       )}

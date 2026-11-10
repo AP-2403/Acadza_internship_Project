@@ -3,7 +3,9 @@ import questionsRaw from '../data/questions.json';
 import reportsRaw from '../data/reports.json';
 import resultsRaw from '../data/results.json';
 
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')
+  ? '/api'
+  : ((import.meta as any).env?.VITE_API_URL || 'http://localhost:8000/api');
 
 async function isBackendOnline(): Promise<boolean> {
   try {

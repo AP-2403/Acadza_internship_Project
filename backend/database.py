@@ -8,8 +8,17 @@ from pathlib import Path
 from datetime import datetime
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DB_PATH = BASE_DIR / "backend" / "acadza.db"
 DATA_DIR = BASE_DIR / "data"
+
+if os.environ.get("VERCEL"):
+    import shutil
+    TEMP_DB = Path("/tmp/acadza.db")
+    ORIG_DB = BASE_DIR / "backend" / "acadza.db"
+    if not TEMP_DB.exists() and ORIG_DB.exists():
+        shutil.copy2(ORIG_DB, TEMP_DB)
+    DB_PATH = TEMP_DB
+else:
+    DB_PATH = BASE_DIR / "backend" / "acadza.db"
 
 def get_conn() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
