@@ -254,15 +254,20 @@ Task:
             }
         }).encode("utf-8")
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
-        req = urllib.request.Request(url, data=req_data, headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            text_resp = data["candidates"][0]["content"]["parts"][0]["text"]
-            parsed = json.loads(text_resp)
-            if "route" in parsed and "verdict" in parsed:
-                parsed["isCorrect"] = (parsed.get("verdict") == "defect")
-                return parsed
+        candidate_models = ["gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.6-flash"]
+        for model_name in candidate_models:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+                req = urllib.request.Request(url, data=req_data, headers={"Content-Type": "application/json"})
+                with urllib.request.urlopen(req, timeout=8) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    text_resp = data["candidates"][0]["content"]["parts"][0]["text"]
+                    parsed = json.loads(text_resp)
+                    if "route" in parsed and "verdict" in parsed:
+                        parsed["isCorrect"] = (parsed.get("verdict") == "defect")
+                        return parsed
+            except Exception as model_err:
+                continue
     except Exception as e:
         print("Gemini API call note (using fallback rule engine):", e)
     return None

@@ -291,7 +291,7 @@ def health_check():
         "service": "Acadza Assessment & Faculty Triage API",
         "version": "2.1.0",
         "geminiConfigured": has_key,
-        "triageEngine": "Google Gemini 2.5 Flash Agent" if has_key else "Local Physics & Typo Rule Engine"
+        "triageEngine": "Google Gemini Flash Agent" if has_key else "Local Physics & Typo Rule Engine"
     }
 
 @app.post("/api/auth/login")
