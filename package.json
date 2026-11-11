@@ -1,0 +1,10 @@
+{
+  "name": "acadza-internship-project",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "cd console && npm install && npm run build",
+    "dev": "cd console && npm run dev",
+    "start": "cd console && npm run preview"
+  }
+}
