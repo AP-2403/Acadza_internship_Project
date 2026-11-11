@@ -258,7 +258,7 @@ export const DemoTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return;
     }
 
-    // Stop current speech or audio
+    // Stop current speech or audio and ensure synthetic TTS is completely silenced
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
@@ -267,82 +267,53 @@ export const DemoTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       audioRef.current.src = '';
     }
 
-    const speakTTS = () => {
-      if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(step.dialogue);
-        utterance.rate = 1.0;
-        utterance.pitch = step.speakerRole === 'student' ? 1.05 : step.speakerRole === 'faculty' ? 0.95 : 1.0;
-        
-        // Pick high quality voice if available
-        const voices = window.speechSynthesis.getVoices();
-        const preferredVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Samantha')));
-        if (preferredVoice) utterance.voice = preferredVoice;
+    const audio = new Audio();
+    audio.src = step.audioFile;
+    audio.muted = isMuted;
+    audioRef.current = audio;
 
-        utterance.onstart = () => setIsSpeaking(true);
-        utterance.onend = () => {
+    audio.addEventListener('playing', () => {
+      setIsSpeaking(true);
+    });
+
+    audio.addEventListener('timeupdate', () => {
+      if (audio.duration) {
+        setAudioProgress((audio.currentTime / audio.duration) * 100);
+      }
+    });
+
+    audio.addEventListener('ended', () => {
+      setIsSpeaking(false);
+      setAudioProgress(100);
+      if (isAutoPlay) {
+        autoAdvanceTimerRef.current = setTimeout(() => {
+          nextStep();
+        }, 1500);
+      }
+    });
+
+    audio.addEventListener('error', () => {
+      // Fallback: try .mp3 if .m4a was requested and failed
+      if (audio.src.endsWith('.m4a')) {
+        audio.src = step.audioFile.replace(/\.m4a$/, '.mp3');
+        audio.play().catch(() => {
           setIsSpeaking(false);
-          setAudioProgress(100);
-          if (isAutoPlay) {
-            autoAdvanceTimerRef.current = setTimeout(() => {
-              nextStep();
-            }, 1500);
-          }
-        };
-        utterance.onerror = () => setIsSpeaking(false);
-
-        window.speechSynthesis.speak(utterance);
+        });
       } else {
         setIsSpeaking(false);
       }
-    };
+    });
 
-    const tryLoadAudio = (audioUrl: string) => {
-      const audio = new Audio();
-      audio.src = audioUrl;
-      audio.muted = isMuted;
-      audioRef.current = audio;
-
-      let playedViaAudio = false;
-
-      audio.addEventListener('playing', () => {
-        setIsSpeaking(true);
-        playedViaAudio = true;
-      });
-
-      audio.addEventListener('timeupdate', () => {
-        if (audio.duration) {
-          setAudioProgress((audio.currentTime / audio.duration) * 100);
+    audio.play().catch((err) => {
+      // Autoplay waiting for user gesture - start on user interaction
+      console.log('Audio waiting for user gesture:', err);
+      const onUserGesture = () => {
+        if (audioRef.current === audio && !isMuted) {
+          audio.play().catch(() => {});
         }
-      });
-
-      audio.addEventListener('ended', () => {
-        setIsSpeaking(false);
-        setAudioProgress(100);
-        if (isAutoPlay) {
-          autoAdvanceTimerRef.current = setTimeout(() => {
-            nextStep();
-          }, 1500);
-        }
-      });
-
-      audio.addEventListener('error', () => {
-        if (!playedViaAudio && audioUrl.endsWith('.m4a')) {
-          tryLoadAudio(audioUrl.replace(/\.m4a$/, '.mp3'));
-        } else if (!playedViaAudio) {
-          speakTTS();
-        }
-      });
-
-      audio.play().catch(() => {
-        if (!playedViaAudio && audioUrl.endsWith('.m4a')) {
-          tryLoadAudio(audioUrl.replace(/\.m4a$/, '.mp3'));
-        } else {
-          speakTTS();
-        }
-      });
-    };
-
-    tryLoadAudio(step.audioFile);
+      };
+      window.addEventListener('click', onUserGesture, { once: true });
+    });
   }, [isMuted, isAutoPlay]);
 
   // Handle step activation & role requirements
