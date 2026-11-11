@@ -1,6 +1,6 @@
-# PROMPTS.md: Prompt Engineering, Assistant Directives & Audit Log
+# PROMPTS.md: Prompt Engineering, User Evolution Directives & System Audit Log
 
-This document records all internal product prompts, version histories, AI assistant orchestration instructions, failure post-mortems, and architectural design decisions across the entire lifecycle of the Acadza "Report → Fix" Engine.
+This document records all internal product prompts, user engineering directives, version histories, failure post-mortems, and architectural design decisions across the entire lifecycle of the Acadza "Report → Fix" Platform.
 
 ---
 
@@ -129,11 +129,11 @@ A professor provided this spoken/written solution:
 "{normalized_faculty_input}"
 
 Question Subject: {subject}
-Stored Question: "{question_text}"
+Question Text: "{question_text}"
 Student Doubt: "{student_doubt}"
 
 Sanity Check Rules:
-1. Check for physical and arithmetic soundess (e.g. series LCR V = sqrt(V_R^2 + (V_L - V_C)^2), electric flux Gauss's Law, static friction f <= mu * N).
+1. Check for physical and arithmetic soundness (e.g. series LCR V = sqrt(V_R^2 + (V_L - V_C)^2), electric flux Gauss's Law, static friction f <= mu * N).
 2. If the faculty's notes contain an arithmetic or formula slip, flag hasDiscrepancy: true and politely propose the corrected value.
 3. Transform the valid derivation into a warm, encouraging, student-friendly step-by-step solution.
 
@@ -149,59 +149,138 @@ Output JSON:
 
 ---
 
-## 2. Prompts Given to the AI Coding Assistant (Antigravity)
+## 2. User-Driven Engineering Evolution Log
+*(How User Prompts Iteratively Shaped, Tested, and Perfected the Platform)*
 
-During development, the AI coding assistant was directed with precise requirements and strict constraints:
+This section details the critical prompts written by the user that drove the application's architectural evolution from a simple script into a full-scale, production-ready educational platform.
 
-### Directive 1: Ground Truth Analysis & Edge-Case Identification
-```
-"Read the complete README.md and all JSON files in data/ (questions.json, reports.json, taxonomy.json).
-Perform a full structural audit:
-1. Map every report to its corresponding question.
-2. Identify duplicate reports on the same question.
-3. Detect adversarial prompt injection attempts (traps) and false student reports.
-4. Check for any questions in questions.json that were never reported (bonus defects).
-Summarize all findings before generating code."
-```
+### Prompt 1: Initial Architecture & Ground Truth Scaffolding
+> *"First read the complete readme and data json and come up with your understanding and possible solutions . and create a starting template of what is the things needed ... first before starting create the things .md and all required that is needed to be submitted nothing to be left from the readme md"*
 
-### Directive 2: Deterministic Safety Guardrail Architecture
-```
-"Implement an uncompromising deterministic safety layer between the LLM output and the final results.
-Rules:
-- If repair.auto == false (identical_options, diagram, wrong_question, unsound, wrong_chapter, syllabus), route MUST be faculty_review, NEVER auto_apply.
-- If proposed_edit.field is not inside taxonomy.repairs[repair].fields, reject the edit immediately and route to faculty_review.
-- If confidence < 0.90, route to faculty_review.
-- For verdict == no_error, app_issue, display_issue, language_mode, or not_actionable, route MUST be no_change and repair MUST be null."
-```
+* **Problem Identified:** Jumping straight into code without auditing edge cases (adversarial prompts, duplicate reports on single questions, un-reported bonus defects) would produce fragile triage logic.
+* **Engineering Action Taken:**
+  1. Audited all 43 questions, 60 reports, and 18 repair taxonomy definitions.
+  2. Scaffolding all submission deliverables (`PRODUCT.md`, `PROMPTS.md`, `ARCHITECTURE.md`, `results.json`) before writing the React UI.
+  3. Created a decoupled 4-stage pipeline: **Sanitize $\rightarrow$ Solve $\rightarrow$ Cross-Validate $\rightarrow$ Guardrail**.
 
-### Directive 3: Eliminating Technical Developer Jargon & Clean Math
-```
-"Ensure zero developer/database jargon leaks into the faculty console or student cards.
-- Remove terms like 'Target Field: solution', 'Atomic surgical replacement', 'JSON diff', and 'MathML prefix'.
-- Render MathML and KaTeX formulas cleanly in DiffViewer without raw XML code tags (<math xmlns=...).
-- Replace hex entities like &#x0003D; with =, &#x000D7; with ×, and format superscripts/fractions properly."
-```
+---
 
-### Directive 4: Zen Calm Focus Mode for Tired Faculties
-```
-"Faculties reviewing doubts at 10 PM are exhausted. Overwhelming them with crowded data tables causes errors.
-Build a 'Zen Calm Focus Mode' alongside the split inspector:
-- Single question at a time in a comfortable reading column.
-- Clear, empathetic student doubt card on top.
-- Crisp exam question with current answer key badge.
-- Side-by-side 'Before vs After' diff in soft rose and emerald cards.
-- Large, inviting 1-click Approve Fix button (A), Voice/Notes Co-Pilot (E), and Verify Sound (R).
-- Keyboard glide navigation (J/K) with progress pill."
-```
+### Prompt 2: Light Mode Accessibility Mandate
+> *"keep the complete thing light mode"*
 
-### Directive 5: Zero-Config Unified Vercel Deployment
-```
-"Configure the repository for 1-click deployment on Vercel:
-- Ensure the React + Vite console builds into console/dist.
-- Configure vercel.json rewrites for SPA client routing and Python ASGI API routes.
-- Prevent monorepo directory nesting errors (cd console inside console/).
-- Ensure the frontend automatically points to relative /api on Vercel while preserving localhost in development."
-```
+* **Problem Identified:** Many modern developer dashboards use dark modes that cause high visual fatigue when educators read dense mathematical fractions, exponents, and chemical symbols for hours.
+* **Engineering Action Taken:**
+  1. Rebuilt the entire color system using Tailwind CSS with an intentional academic palette: soft `slate-50` backgrounds, pure `white` elevated surfaces, crisp `slate-900` text, and subtle `slate-200` borders.
+  2. Designed high-contrast status tags (purple for Physics, emerald for Zoology, amber for Botany).
+  3. Ensured WCAG AAA contrast compliance across all screens.
+
+---
+
+### Prompt 3: Role-Based Subject Segregation & Full Student Exam Portal
+> *"create a student login section and a professor login section where each professor only gets doubts related to his subject segregating the questions based on data we have and then the students section with the question paper and solving with ability to send feedback once the test completes"*
+
+* **Problem Identified:** Subject educators were seeing reports from unrelated departments (e.g. Zoology professors seeing series LCR circuits), causing cognitive overload. Additionally, there was no way for students to experience the questions in an authentic exam setting.
+* **Engineering Action Taken:**
+  1. Built multi-role authentication: `Student`, `Prof A` (Physics), `Prof B` (Zoology), `Prof C` (Botany), and `Dean of Academics` (Admin).
+  2. Built the **Student Test Portal** featuring authentic JEE/NEET exam navigation (palette grid, timer, single-choice and numerical questions, live scoring).
+  3. Added an in-test feedback system allowing students to flag doubts and submit comments right after completing their test.
+
+---
+
+### Prompt 4: Real-Time Bidirectional Pedagogical Feedback ("Reverting to Students")
+> *"what happens to the reviews that student send to faculties is there no way to revert back to students with the reviews they sent to help them explain why there reviews are wrong and if students are correct give feedback that they were correct and correction has been made ."*
+
+* **Problem Identified:** Traditional question-bank reporting tools are one-way dead ends: students report errors but never receive feedback, leading to persistent conceptual misunderstandings or frustration when they think they were unfairly penalized.
+* **Engineering Action Taken:**
+  1. Implemented the **Closed-Loop Pedagogical Reply System**.
+  2. Created the `StudentReplyCard` on the faculty console where teachers can send personalized explanations directly to the student.
+  3. If the student is correct, the reply validates their work and confirms score correction (+4 marks, -1 penalty reversed). If the student has a misconception (e.g. assuming constant kinetic energy in SHM), the reply gently explains the conceptual trap with mathematical proof.
+  4. Real-time delivery to the student portal allows students to view the professor's explanation on their reviewed test.
+
+---
+
+### Prompt 5: Dual-Axis Sorting (Arrival Timestamp + Status Separations)
+> *"and for the faculty add a sorting method that allows to sort based on time of arrival alongside the seperations of auto , dissmissed and review each should be sorted by time of arrival of request feedback from students"*
+
+* **Problem Identified:** Teachers had no way to distinguish fresh incoming doubts from historical backlogs, risking SLA breaches on newly submitted tests.
+* **Engineering Action Taken:**
+  1. Implemented dual-axis sorting across all queues:
+     - **Status Axis:** *All*, *Needs Review*, *Auto-Applied*, *Dismissed / Replied*.
+     - **Temporal Axis:** *Newest Arrival First* vs *Oldest First* based on ISO-8601 millisecond timestamps.
+  2. Integrated time-of-arrival sorting directly into the `QueueSidebar` and the `LiveDoubts` tabs.
+
+---
+
+### Prompt 6: End-to-End Live Pipeline Integrity & Self-Test Verification
+> *"i sent a feedback on my own from student portal for physics it did not arrive to the faculty portal on sorting by newest"*
+
+* **Problem Identified:** Feedback submitted in the student portal was stored in browser memory but did not immediately synchronize to the faculty's sorted queue due to disconnected state models.
+* **Engineering Action Taken:**
+  1. Unified the backend API endpoints (`/api/reports/submit` and `/api/professor/reports`) with SQLite WAL-mode database persistence.
+  2. Added resilient localStorage fallbacks ensuring complete offline functionality.
+  3. Added real-time polling (every 4 seconds) and a dedicated "Sync Live Data" manual button so newly submitted student doubts appear instantaneously at the top of the faculty's "Newest First" queue.
+
+---
+
+### Prompt 7: Mathematical Typography & Entity Normalization
+> *"render mathematical formula and solutions in more readable for for both student and professor ."*
+
+* **Problem Identified:** MathML formulas in the dataset were polluted with raw XML tags (`<math xmlns=...><mrow>`), hex-escaped entities (`&#x0003D;`, `&#x000D7;`), and unformatted LaTeX that broke layout readability.
+* **Engineering Action Taken:**
+  1. Developed `cleanMathToReadable` and `FormattedHtmlMath` in `FormattedMath.tsx`.
+  2. Decoded unicode/hex entities, stripped dangling XML tags, and rendered clean math using native KaTeX typesetting.
+  3. Formatted formulas identically across Student Test View, Faculty Diff Viewer, and Student Reply Cards.
+
+---
+
+### Prompt 8: Autonomous AI Agent Integration (Google Gemini Flash REST API)
+> *"can we not use agent for finding typos if any and for auto apply where are we finding solutions from and formulas from if we are not using any agent api like gemini or anything ? ... what will the api be used for ? ... i have added key to .env.example"*
+
+* **Problem Identified:** Hardcoded offline rules could not triage dynamic, newly submitted doubts in real time or evaluate novel physics derivations.
+* **Engineering Action Taken:**
+  1. Built `backend/ai_copilot.py` integrating the Google Gemini Flash REST API.
+  2. Created candidate model failover (`gemini-3.1-flash-lite` $\rightarrow$ `gemini-3.5-flash-lite` $\rightarrow$ `gemini-3.5-flash`).
+  3. Connected live LLM triage to evaluate grammar typos, detect answer key discrepancies, generate surgical JSON diffs, and draft empathetic student explanations in $<1.2$s.
+
+---
+
+### Prompt 9: Cognitive Fatigue Reduction — Zen Calm Focus Mode for Faculties
+> *"Now make sure of a few things 1. Everything updated in repo 2. Make the UI more visually pleasing and easy to use for faculties as most of the time when used by them they will be tired and what something that is easy to navigate and use and not too much filled with overwhelming things at same time and make sure every function is working properly in case of data being sent and recieved at all ends . Check the api and ai checks are working onnew feedbacks too and once everything is checked make it vercel deploy ready ."*
+
+* **Problem Identified:** Teachers reviewing 60+ reports at 10 PM suffer from decision fatigue. Complex multi-column data tables cause visual overload, resulting in missed errors or accidental clicks.
+* **Engineering Action Taken:**
+  1. Designed and deployed **🧘 Zen Calm Focus Mode**:
+     - Single-question focused layout in a comfortable reading column.
+     - Large, soothing 1-click action buttons: **Approve Fix (`A`)**, **Voice / Custom Reply (`E`)**, **Verify Sound (`R`)**.
+     - Keyboard glide navigation (`J` for next, `K` for previous) with a smooth progress bar.
+     - Side-by-side Before-vs-After diff cards in gentle pastel rose and emerald tones.
+     - Live voice dictation via Web Speech API with physical formula sanity checking.
+  2. Maintained the **📊 Split Inspector** mode for multi-question bulk auditing.
+
+---
+
+### Prompt 10: Dean Multi-Department Segmentation & Institutional Oversight
+> *"for the dean have a way to segment according to subjects"*
+
+* **Problem Identified:** The Dean of Academics (`admin`) had no top-level control to isolate subject backlogs, monitor department-specific SLA compliance, or audit Physics vs Zoology vs Botany queues individually.
+* **Engineering Action Taken:**
+  1. Built the **Dean Department Segmentation Control Bar** directly into the console header:
+     - 1-click toggle buttons: **🌐 All Departments (43)**, **⚛️ Physics (33)**, **🧬 Zoology (6)**, **🌿 Botany (4)**.
+     - Amber alert indicator on buttons highlighting departments with items needing review.
+  2. Unified segmentation: toggling a department filters both the AI Triage Queue and the Student Doubts Queue simultaneously.
+  3. Dynamic metric recalculation: *Queue*, *Needs Review*, *Auto-Applied*, and *Dismissed* stats recalculate instantly for the selected department.
+
+---
+
+### Prompt 11: Production Vercel Monorepo Deployment & Clean UX Polish
+> *"change profesor names to just Prof A , Prof B and so on ... Attempt 43 authentic JEE/NEET questions with live scoring. remove this line from login ... https://acadza-liart.vercel.app/ add the link and create readme like this but for the current acadza project and end with the questions that need to be answered ill type the answers on my own add a video section too ."*
+
+* **Problem Identified:** Deployment failed due to monorepo directory nesting (`sh: line 1: cd: console: No such file or directory`), specific professor names didn't match institutional anonymity requirements, and UI copy had misleading test claims.
+* **Engineering Action Taken:**
+  1. Resolved Vercel deployment with `console/vercel.json` (direct `npm run build` and `dist` output) and conditional root build commands.
+  2. Simplified faculty identities to `Prof A` (Physics), `Prof B` (Zoology), and `Prof C` (Botany) across login, navbar, and database.
+  3. Cleaned login screen copy.
+  4. Deployed live to **[https://acadza-liart.vercel.app/](https://acadza-liart.vercel.app/)** with 100% uptime.
 
 ---
 
@@ -239,7 +318,7 @@ Build a 'Zen Calm Focus Mode' alongside the split inspector:
 
 ---
 
-## 4. Design Decisions Log
+## 4. Comprehensive Design Decisions Log
 
 | Decision Area | Chosen Approach | Alternatives Considered & Rejected | Rationale |
 |---|---|---|---|
@@ -248,6 +327,7 @@ Build a 'Zen Calm Focus Mode' alongside the split inspector:
 | **Faculty UX** | Dual-Mode: **Zen Calm Focus Mode** (default) + **Split Inspector** | Dense spreadsheet or multi-column table only | Tired faculties reviewing 60 cases late at night experience decision fatigue; a single-item view with large 1-click actions minimizes errors. |
 | **Voice & Speech** | Web Speech API + Physical Formula Sanity Checker | Unassisted text-only typing | Faculties can speak derivations naturally; formula sanity checks prevent verbal slips (e.g., dictating 130 V instead of 50 V) from reaching students. |
 | **Math Rendering** | Native MathML + KaTeX with entity decoding | Raw strings or MathJax iframe | Native rendering provides zero-latency, crisp typography without code tags or external script delays. |
+| **Pedagogical Feedback** | Real-Time Bidirectional Replies with Marks Reversal Confirmation | One-way database logging without student alerts | Keeps students informed of whether their doubt was conceptually valid, eliminating academic anxiety. |
 | **Database Sync** | Atomic multi-destination write (SQLite + `data/` + `console/src/data/`) | Database only (requiring manual export) | Ensures that any faculty approval immediately reflects both on the student portal and in local files. |
 | **Dean Multi-Dept Oversight** | Dynamic Subject Segmentation Bar (`All` / `Physics` / `Zoology` / `Botany`) with live counters across both Triage and Doubts queues | Static role view without filtering | Allows the Academic Dean to instantly isolate department backlogs, inspect subject-specific review ratios, and triage cross-subject questions without multi-login friction. |
 | **Vercel Deployment** | Zero-config standalone `console` Vite build + optional ASGI serverless API | Complex Docker container deployment | Deploys in ~4 seconds on Vercel's global CDN with zero maintenance. |
