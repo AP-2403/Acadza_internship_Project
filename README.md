@@ -236,6 +236,12 @@ Please find below the answers to the questions requested for this submission:
 
 ---
 
+### 4. In 2-3 lines, in your own words: why this work, why now?
+> **Answer:**  
+> [Type your answer here]
+
+---
+
 ### Submission Links Summary:
 - **Public GitHub Repository:** [https://github.com/AP-2403/Acadza_internship_Project](https://github.com/AP-2403/Acadza_internship_Project)
 - **Live Production URL:** [https://acadza-liart.vercel.app/](https://acadza-liart.vercel.app/)

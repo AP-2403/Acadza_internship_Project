@@ -8,7 +8,7 @@ This file contains the verbatim answers for the submission email and the 3-minut
 
 ### Repository & Project Links
 - **GitHub Repository (Public):** https://github.com/AP-2403/Acadza_internship_Project
-- **Live Faculty Review Console URL:** https://ap-2403.github.io/Acadza_internship_Project/ (and 1-click Vercel/Netlify deploy via bundled `vercel.json` / `netlify.toml`)
+- **Live Faculty Review Console URL:** https://acadza-liart.vercel.app/
 - **3-Minute Loom / Video Recording URL:** [Insert Video Link Here - see storyboard below]
 
 ### 1. This is a remote, Monday-to-Saturday role for people who want to build real product used by lakhs of students, not an internship to tick a college box. Is that you?
