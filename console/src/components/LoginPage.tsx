@@ -110,11 +110,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <h2 className="text-lg font-bold text-slate-900">
               {activeTab === 'student' ? 'Sign in to solve test paper' : 'Faculty triage & review sign in'}
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {activeTab === 'student'
-                ? 'Attempt 43 authentic JEE/NEET questions with live scoring.'
-                : 'Subject-specific review queue (Physics, Zoology, Botany).'}
-            </p>
+            {activeTab === 'professor' && (
+              <p className="text-xs text-slate-500 mt-0.5">
+                Subject-specific review queue (Physics, Zoology, Botany).
+              </p>
+            )}
           </div>
 
           {error && (
