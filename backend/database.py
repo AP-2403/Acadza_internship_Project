@@ -93,9 +93,9 @@ def init_db():
     # Seed users (plain text passwords for demo guest login)
     seed_users = [
         ("student",       "guest123", "Aarav Sharma (JEE Aspirant)", "student",   None),
-        ("physics_prof",  "guest123", "Prof. H. C. Verma",           "professor", "Physics"),
-        ("zoology_prof",  "guest123", "Prof. R. N. Mukherjee",       "professor", "Zoology"),
-        ("botany_prof",   "guest123", "Prof. Sunita Das",            "professor", "Botany"),
+        ("physics_prof",  "guest123", "Prof A",                      "professor", "Physics"),
+        ("zoology_prof",  "guest123", "Prof B",                      "professor", "Zoology"),
+        ("botany_prof",   "guest123", "Prof C",                      "professor", "Botany"),
         ("admin",         "admin123", "Dean of Academics (Admin)",    "admin",     None),
     ]
     for username, pwd, name, role, subject in seed_users:

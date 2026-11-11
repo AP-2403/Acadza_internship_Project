@@ -158,7 +158,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               {getInitials(user?.name)}
             </div>
             <div className="text-left text-xs">
-              <div className="font-semibold text-slate-800">{user?.name || 'Prof. H. C. Verma'}</div>
+              <div className="font-semibold text-slate-800">{user?.name || 'Prof A'}</div>
               <div className="text-[10px] text-slate-500 font-medium">
                 {user?.subject ? `${user.subject} Faculty Lead` : 'Dean of Academics'}
               </div>

@@ -37,9 +37,9 @@ export async function loginUser(username: string, password: string): Promise<{ s
   // Local fallback for guest accounts
   const GUESTS: Record<string, { pwd: string; name: string; role: 'student' | 'professor' | 'admin'; subject: string | null }> = {
     student: { pwd: 'guest123', name: 'Aarav Sharma (JEE Aspirant)', role: 'student', subject: null },
-    physics_prof: { pwd: 'guest123', name: 'Prof. H. C. Verma', role: 'professor', subject: 'Physics' },
-    zoology_prof: { pwd: 'guest123', name: 'Prof. R. N. Mukherjee', role: 'professor', subject: 'Zoology' },
-    botany_prof: { pwd: 'guest123', name: 'Prof. Sunita Das', role: 'professor', subject: 'Botany' },
+    physics_prof: { pwd: 'guest123', name: 'Prof A', role: 'professor', subject: 'Physics' },
+    zoology_prof: { pwd: 'guest123', name: 'Prof B', role: 'professor', subject: 'Zoology' },
+    botany_prof: { pwd: 'guest123', name: 'Prof C', role: 'professor', subject: 'Botany' },
     admin: { pwd: 'admin123', name: 'Dean of Academics (Admin)', role: 'admin', subject: null }
   };
 

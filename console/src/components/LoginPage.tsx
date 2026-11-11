@@ -210,7 +210,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     </div>
                     <div>
                       <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                        <span>Prof. H. C. Verma</span>
+                        <span>Prof A</span>
                         <span className="text-[10px] bg-purple-200 text-purple-800 px-1.5 py-0.2 rounded font-semibold">
                           Physics (35 doubts)
                         </span>
@@ -233,7 +233,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     </div>
                     <div>
                       <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                        <span>Prof. R. N. Mukherjee</span>
+                        <span>Prof B</span>
                         <span className="text-[10px] bg-emerald-200 text-emerald-800 px-1.5 py-0.2 rounded font-semibold">
                           Zoology (5 doubts)
                         </span>
@@ -256,7 +256,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     </div>
                     <div>
                       <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                        <span>Prof. Sunita Das</span>
+                        <span>Prof C</span>
                         <span className="text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.2 rounded font-semibold">
                           Botany (4 doubts)
                         </span>
