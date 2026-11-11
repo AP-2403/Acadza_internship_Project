@@ -7,9 +7,11 @@ import {
   CheckCircle2,
   FileSearch,
   LogOut,
-  GraduationCap
+  GraduationCap,
+  PlayCircle
 } from 'lucide-react';
 import { User } from '../types';
+import { useDemoTour } from '../context/DemoTourContext';
 
 interface NavbarProps {
   onOpenAudit: () => void;
@@ -44,6 +46,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSubjectChange,
   subjectCounts
 }) => {
+  const { startTour } = useDemoTour();
   const getInitials = (name?: string) => {
     if (!name) return 'PR';
     const parts = name.split(' ');
@@ -132,6 +135,17 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Right: Actions, Reviewer & Logout */}
         <div className="flex items-center space-x-2">
           
+          {/* Guided Demo Tour Launcher */}
+          <button
+            type="button"
+            onClick={startTour}
+            className="flex items-center space-x-1.5 rounded-lg border border-blue-400 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:from-blue-700 hover:to-indigo-800 transition-all hover:scale-105 active:scale-95"
+            title="Start Interactive Guided Demo Tour (10 Steps)"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-amber-300 animate-spin" />
+            <span className="font-extrabold">🎬 Guided Demo</span>
+          </button>
+
           {/* Bonus Defects Button */}
           <button
             onClick={onOpenBonus}

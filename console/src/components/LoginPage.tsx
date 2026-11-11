@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { GraduationCap, BookOpen, ShieldCheck, UserCheck, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
+import { GraduationCap, BookOpen, ShieldCheck, UserCheck, ArrowRight, Sparkles, AlertCircle, PlayCircle } from 'lucide-react';
 import { loginUser } from '../lib/api';
 import { User } from '../types';
+import { useDemoTour } from '../context/DemoTourContext';
 
 interface LoginPageProps {
   onLoginSuccess: (user: User) => void;
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
+  const { startTour } = useDemoTour();
   const [activeTab, setActiveTab] = useState<'student' | 'professor'>('student');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -60,10 +62,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         <p className="text-sm text-slate-500 mt-2">
           Solve test papers, inspect instant auto-graded answers, submit live question doubts, and route errors straight to specialized subject faculty.
         </p>
+        <div className="mt-4 flex items-center justify-center">
+          <button
+            type="button"
+            onClick={startTour}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/25 hover:from-blue-700 hover:to-indigo-800 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+          >
+            <Sparkles className="w-4 h-4 text-amber-300 animate-spin" />
+            <span>🎬 Start Interactive Demo Walkthrough (10 Steps)</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* Main Login Card */}
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+      <div id="tour-login-card" className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
         
         {/* Role Toggle Tabs */}
         <div className="grid grid-cols-2 p-1.5 bg-slate-100 border-b border-slate-200">

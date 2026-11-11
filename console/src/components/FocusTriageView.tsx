@@ -224,7 +224,7 @@ export const FocusTriageView: React.FC<FocusTriageViewProps> = ({
         </div>
 
         {/* 3. AI Specialist Verification & Proposed Fix (Soothing & Crystal Clear) */}
-        <div className="rounded-2xl border border-indigo-100 bg-white p-5 shadow-xs space-y-4">
+        <div id="tour-focus-diff-card" className="rounded-2xl border border-indigo-100 bg-white p-5 shadow-xs space-y-4">
           
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
             <div className="flex items-center space-x-2">
@@ -408,6 +408,7 @@ export const FocusTriageView: React.FC<FocusTriageViewProps> = ({
 
             {/* Voice & Notes Co-Pilot Button */}
             <button
+              id="tour-voice-copilot-btn"
               type="button"
               onClick={onOpenCopilot}
               className="flex items-center space-x-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition-colors shadow-2xs"
@@ -420,6 +421,7 @@ export const FocusTriageView: React.FC<FocusTriageViewProps> = ({
 
             {/* Big 1-Click Approve Button */}
             <button
+              id="tour-approve-hero-btn"
               type="button"
               onClick={() => onApprove('Approved as recommended by AI triage')}
               className="flex items-center space-x-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-emerald-500 shadow-md shadow-emerald-600/20 hover:scale-[1.02] active:scale-[0.99] transition-all"

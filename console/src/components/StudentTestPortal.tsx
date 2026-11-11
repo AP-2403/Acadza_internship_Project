@@ -27,6 +27,7 @@ import { User, QuestionTestResult, TestStats, StudentDoubtItem } from '../types'
 import { submitStudentTest, submitStudentDoubt, fetchStudentDoubts, fetchQuestionsList } from '../lib/api';
 import { FormattedHtmlMath, FormattedMathText } from './FormattedMath';
 import questionsRaw from '../data/questions.json';
+import { useDemoTour } from '../context/DemoTourContext';
 
 interface StudentTestPortalProps {
   user: User;
@@ -59,6 +60,8 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
   // Student Doubts & Faculty Responses state
   const [myDoubts, setMyDoubts] = useState<StudentDoubtItem[]>([]);
   const [isLoadingDoubts, setIsLoadingDoubts] = useState(false);
+
+  const { isActive: isTourActive, currentStepIndex, demoState } = useDemoTour();
 
   // Dynamically load updated question bank (reflecting faculty approved fixes)
   const [questionsList, setQuestionsList] = useState<any[]>(questionsRaw as any[]);
@@ -109,6 +112,68 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
     const interval = setInterval(loadDoubts, 6000);
     return () => clearInterval(interval);
   }, [user.username]);
+
+  // Guided Demo Tour Synchronizer
+  useEffect(() => {
+    if (!isTourActive) return;
+
+    if (currentStepIndex === 1) {
+      // Step 2: Authentic Exam Simulator (solving LCR question)
+      if (phase !== 'solving') {
+        setShowInstructionsModal(false);
+        setPhase('solving');
+      }
+      const lcrIdx = visibleSolvingQuestions.findIndex(q => q._id && q._id.includes('60f744b3'));
+      if (lcrIdx !== -1 && currentIndex !== lcrIdx) {
+        setCurrentIndex(lcrIdx);
+      }
+    } else if (currentStepIndex === 2) {
+      // Step 3: In-Test Doubt Submission
+      if (phase !== 'results') {
+        const testAnswers: Record<string, string> = { '60f744b3f1b9bc7cc7b4a949': 'A' };
+        setAnswers(testAnswers);
+        submitStudentTest(testAnswers, user.username).then(({ stats: s, results: r }) => {
+          setStats(s);
+          setResults(r);
+          setPhase('results');
+        });
+      }
+      if (!feedbackTexts['60f744b3f1b9bc7cc7b4a949']) {
+        setFeedbackTexts(prev => ({
+          ...prev,
+          '60f744b3f1b9bc7cc7b4a949': demoState.studentComment
+        }));
+      }
+    } else if (currentStepIndex === 9) {
+      // Step 10: Closed-Loop Trust: Student Score Restored
+      if (phase !== 'results') {
+        setPhase('results');
+      }
+      const resolvedDoubt: StudentDoubtItem = {
+        reportId: 'R_DEMO_LCR',
+        questionId: '60f744b3f1b9bc7cc7b4a949',
+        subject: 'Physics',
+        studentComment: demoState.studentComment,
+        status: 'reviewed',
+        reportedAt: new Date().toISOString(),
+        facultyName: 'Prof A (Physics Faculty)',
+        verdict: 'error_verified',
+        isResolved: true,
+        studentReply: 'Hello Aarav! You were completely right. In an AC series LCR circuit, voltages across inductor and capacitor are 180° out of phase, so the net reactive voltage is (60 V - 30 V) = 30 V. Combining with 40 V across resistance via phasors gives V = √(40² + 30²) = 50 V. The answer key has been corrected to Option A and your score updated (+4 marks)!',
+        isCorrected: true
+      };
+      setMyDoubts(prev => {
+        const filtered = prev.filter(d => d.questionId !== '60f744b3f1b9bc7cc7b4a949');
+        return [resolvedDoubt, ...filtered];
+      });
+      setStats(prev => prev ? {
+        ...prev,
+        scorePercent: Math.min(100, prev.scorePercent + 10),
+        correct: prev.correct + 1,
+        incorrect: Math.max(0, prev.incorrect - 1)
+      } : null);
+    }
+  }, [isTourActive, currentStepIndex, phase, visibleSolvingQuestions, currentIndex, user.username, demoState.studentComment]);
 
   // Handle option selection
   const handleSelectOption = (qid: string, option: string) => {
@@ -660,7 +725,7 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
             <div className="max-w-4xl mx-auto space-y-6">
               
               {/* Question Header Card */}
-              <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+              <div id="tour-student-test-view" className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
                 
                 {/* Meta Pills */}
                 <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
@@ -1158,6 +1223,7 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
                     {/* Existing Faculty Response if already replied */}
                     {existingDoubt && existingDoubt.studentReply && (
                       <div
+                        id={item.questionId.includes('60f744b3') ? 'tour-student-resolved-card' : undefined}
                         className={`mt-4 p-4 rounded-xl border ${
                           existingDoubt.isCorrected
                             ? 'bg-emerald-50 border-emerald-200'
@@ -1189,7 +1255,10 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
                     )}
 
                     {/* Feedback & Doubt Submission Box */}
-                    <div className="mt-6 pt-4 border-t border-slate-100 bg-slate-50/70 -mx-6 -mb-6 p-6 rounded-b-xl">
+                    <div
+                      id={item.questionId.includes('60f744b3') ? 'tour-student-report-doubt' : undefined}
+                      className="mt-6 pt-4 border-t border-slate-100 bg-slate-50/70 -mx-6 -mb-6 p-6 rounded-b-xl"
+                    >
                       <div className="flex items-center gap-2 mb-2">
                         <MessageSquarePlus className="w-4 h-4 text-indigo-600" />
                         <span className="text-xs font-bold text-slate-900">

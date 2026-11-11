@@ -20,6 +20,7 @@ import {
 import { callAIAssist, updateQuestionSolutionInDb, AIAssistResponse } from '../lib/api';
 import { FormattedMathText } from './FormattedMath';
 import { QuestionGroup } from '../types';
+import { useDemoTour } from '../context/DemoTourContext';
 
 interface FacultySolutionCopilotProps {
   questionGroup: QuestionGroup;
@@ -49,7 +50,23 @@ export const FacultySolutionCopilot: React.FC<FacultySolutionCopilotProps> = ({
   const [updateDbSolution, setUpdateDbSolution] = useState(false);
   const [dbUpdateStatus, setDbUpdateStatus] = useState<string | null>(null);
 
+  const { isActive: isTourActive, currentStepIndex, demoState } = useDemoTour();
+
   const recognitionRef = useRef<any>(null);
+
+  // Auto-sync with Demo Tour dictation & analysis
+  useEffect(() => {
+    if (isTourActive) {
+      if (currentStepIndex >= 5 && demoState.copilotNotes) {
+        if (!facultyNotes) {
+          setFacultyNotes(demoState.copilotNotes);
+        }
+      }
+      if (currentStepIndex >= 6 && !aiResult && demoState.copilotNotes) {
+        handleAnalyzeAndSynthesize(demoState.copilotNotes);
+      }
+    }
+  }, [isTourActive, currentStepIndex, demoState.copilotNotes, facultyNotes, aiResult]);
 
   // Initialize Web Speech API for voice dictation
   useEffect(() => {
@@ -171,7 +188,7 @@ export const FacultySolutionCopilot: React.FC<FacultySolutionCopilotProps> = ({
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4 text-xs font-sans">
+    <div id="tour-voice-copilot-modal" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4 text-xs font-sans">
       
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -284,7 +301,7 @@ export const FacultySolutionCopilot: React.FC<FacultySolutionCopilotProps> = ({
 
       {/* Formula Sanity Check & Question-Back Card */}
       {aiResult && (
-        <div className="space-y-3 animate-in fade-in duration-200">
+        <div id="tour-formula-sanity-result" className="space-y-3 animate-in fade-in duration-200">
           
           {/* Discrepancy & Polite Question-Back */}
           {aiResult.sanity.hasDiscrepancy ? (

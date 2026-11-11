@@ -204,7 +204,7 @@ export const QueueSidebar: React.FC<QueueSidebarProps> = ({
             No questions match the current filter.
           </div>
         ) : (
-          sortedGroups.map((group) => {
+          sortedGroups.map((group, idx) => {
             const isSelected = group.questionId === selectedGroupId;
             const res = group.primaryResult;
             const hasMultipleReports = group.reports.length > 1;
@@ -213,6 +213,7 @@ export const QueueSidebar: React.FC<QueueSidebarProps> = ({
             return (
               <div
                 key={group.questionId}
+                id={idx === 0 ? 'tour-faculty-queue-item' : undefined}
                 onClick={() => onSelectGroup(group.questionId)}
                 className={`p-3 cursor-pointer transition-all border-l-4 ${
                   isSelected

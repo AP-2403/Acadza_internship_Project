@@ -25,6 +25,7 @@ import {
   AIAssistResponse
 } from '../lib/api';
 import { FormattedMathText } from './FormattedMath';
+import { useDemoTour } from '../context/DemoTourContext';
 
 // Import bundled static datasets
 import questionsRaw from '../data/questions.json';
@@ -64,6 +65,8 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubject, setSelectedSubject] = useState<string>(user.subject || 'all');
   const [queueSortMethod, setQueueSortMethod] = useState<'newest' | 'oldest' | 'urgency'>('newest');
+
+  const { isActive: isTourActive, currentStepIndex } = useDemoTour();
 
   // Live doubts filtering and sorting
   const [doubtsFilter, setDoubtsFilter] = useState<'all' | 'pending' | 'auto_applied' | 'reviewed'>('all');
@@ -220,6 +223,35 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
       setSelectedGroupId(null);
     }
   }, [groups, activeFilter]);
+
+  // Guided Demo Tour State Synchronizer
+  useEffect(() => {
+    if (!isTourActive) return;
+
+    if (currentStepIndex === 3) {
+      // Step 4: Arrived in queue
+      setActiveTab('triage');
+      if (groups.length > 0 && !selectedGroupId) {
+        setSelectedGroupId(groups[0].questionId);
+      }
+    } else if (currentStepIndex === 4) {
+      // Step 5: Zen Focus View
+      setActiveTab('triage');
+      setViewMode('focus');
+      setShowFocusCopilot(false);
+    } else if (currentStepIndex === 5 || currentStepIndex === 6) {
+      // Steps 6 & 7: Voice Co-Pilot & Sanity Check
+      setActiveTab('triage');
+      setShowFocusCopilot(true);
+    } else if (currentStepIndex === 7) {
+      // Step 8: Pedagogical Reply Synthesis & 1-Click Approval
+      setActiveTab('triage');
+      setShowFocusCopilot(false);
+    } else if (currentStepIndex === 8) {
+      // Step 9: Dean Multi-Department
+      setActiveTab('triage');
+    }
+  }, [isTourActive, currentStepIndex, groups, selectedGroupId]);
 
   const currentGroup = useMemo(() => {
     return groups.find((g) => g.questionId === selectedGroupId) || groups[0] || null;
@@ -667,7 +699,7 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
 
       {/* Dean Department Segmentation Control Bar */}
       {user?.role === 'admin' && (
-        <div className="bg-slate-900 border-b border-slate-800 text-white px-6 py-2 flex flex-wrap items-center justify-between gap-3 shadow-inner">
+        <div id="tour-dean-dept-bar" className="bg-slate-900 border-b border-slate-800 text-white px-6 py-2 flex flex-wrap items-center justify-between gap-3 shadow-inner">
           <div className="flex items-center gap-2">
             <span className="text-sm">🏛️</span>
             <span className="text-xs font-bold text-slate-100">Dean Department Segmentation:</span>
