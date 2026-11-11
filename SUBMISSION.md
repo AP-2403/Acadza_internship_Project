@@ -12,16 +12,16 @@ This file contains the verbatim answers for the submission email and the 3-minut
 - **3-Minute Loom / Video Recording URL:** [Insert Video Link Here - see storyboard below]
 
 ### 1. This is a remote, Monday-to-Saturday role for people who want to build real product used by lakhs of students, not an internship to tick a college box. Is that you?
-**Yes, absolutely.** I build products designed to handle real production volume, edge cases, and messy student inputs rather than theoretical exercises. The prospect of directly protecting lakhs of students from losing marks, ranks, and confidence due to bad question data is what drives my engineering rigor. I thrive in high-ownership, Monday-to-Saturday product environments where code ships directly to users.
+**Yes, absolutely.** I like building products designed to handle real production volume, edge cases, and messy student inputs rather than theoretical exercises. The prospect of directly protecting lakhs of students from losing marks, ranks, and confidence due to bad question data is a great form of problem to tackle. I have no issue in working from Monday to Saturday on building features and products that will be used by students on daily basis .
 
 ### 2. How many months can you commit?
-**6 months full-time commitment** (with readiness to transition to long-term/PPO based on performance and impact).
+**3 months.**
 
 ### 3. Earliest start date.
-**Immediate start** (within 24–48 hours of selection).
+**From start of December.**
 
 ### 4. In 2-3 lines, in your own words: why this work, why now?
-EdTech platforms are only as trustworthy as their question bank; a single wrong answer key destroys student trust and damages prep morale. With modern LLM orchestration and deterministic guardrails, we can now fix this at scale with zero hallucinations, turning student frustration into instantaneous trust.
+EdTech platforms are only as trustworthy as their question bank; a single wrong answer key destroys student trust and damages prep morale in high-stakes exams. With modern LLM orchestration and deterministic guardrails, we can now fix this at scale with near zero hallucinations, turning student frustration into instantaneous trust.
 
 ---
 
