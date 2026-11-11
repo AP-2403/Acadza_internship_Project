@@ -16,6 +16,25 @@ async function isBackendOnline(): Promise<boolean> {
   }
 }
 
+export function getAuthHeaders(extra: Record<string, string> = {}): HeadersInit {
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('acadza_auth_token') : null;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...extra
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+export function logoutUser(): void {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('acadza_auth_token');
+    localStorage.removeItem('acadza_user');
+  }
+}
+
 export async function loginUser(username: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {
   try {
     const online = await isBackendOnline();
@@ -27,6 +46,9 @@ export async function loginUser(username: string, password: string): Promise<{ s
       });
       if (res.ok) {
         const data = await res.json();
+        if (data.token && typeof localStorage !== 'undefined') {
+          localStorage.setItem('acadza_auth_token', data.token);
+        }
         return { success: true, user: { ...data.user, token: data.token } };
       }
     }
@@ -45,6 +67,10 @@ export async function loginUser(username: string, password: string): Promise<{ s
 
   const account = GUESTS[username.toLowerCase().trim()];
   if (account && account.pwd === password.trim()) {
+    const token = `tok_${username.toLowerCase().trim()}_${Date.now()}`;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('acadza_auth_token', token);
+    }
     return {
       success: true,
       user: {
@@ -52,7 +78,7 @@ export async function loginUser(username: string, password: string): Promise<{ s
         name: account.name,
         role: account.role,
         subject: account.subject,
-        token: `token_${username}_${Date.now()}`
+        token
       }
     };
   }
@@ -189,7 +215,7 @@ export async function fetchLiveDoubts(subject: string | null): Promise<LiveDoubt
       const url = subject && subject.toLowerCase() !== 'all'
         ? `${API_BASE}/professor/reports?subject=${encodeURIComponent(subject)}`
         : `${API_BASE}/professor/reports`;
-      const res = await fetch(url);
+      const res = await fetch(url, { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         return (data.reports || []).map((r: any) => ({
@@ -228,7 +254,7 @@ export async function fetchQueueData(subject: string | null): Promise<{
       const url = subject && subject.toLowerCase() !== 'all'
         ? `${API_BASE}/professor/reports?subject=${encodeURIComponent(subject)}`
         : `${API_BASE}/professor/reports`;
-      const res = await fetch(url);
+      const res = await fetch(url, { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         const reports: StudentReport[] = [];
@@ -354,7 +380,7 @@ export async function sendProfessorReply(
     if (online) {
       const res = await fetch(`${API_BASE}/professor/reply`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ reportId, replyText, verdict, facultyName })
       });
       if (res.ok) {
@@ -398,7 +424,7 @@ export async function approveQuestionFix(
     if (online) {
       const res = await fetch(`${API_BASE}/professor/approve-fix`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ questionId, reportId, edit, comment, facultyName })
       });
       if (res.ok) {
@@ -446,7 +472,7 @@ export async function rejectQuestionReport(
     if (online) {
       const res = await fetch(`${API_BASE}/professor/reject-report`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ questionId, reportId, reason, facultyName })
       });
       if (res.ok) {
@@ -506,7 +532,7 @@ export async function callAIAssist(
     if (online) {
       const res = await fetch(`${API_BASE}/professor/ai-assist`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ questionId, facultyInput, studentDoubt, reportId })
       });
       if (res.ok) {
@@ -532,7 +558,7 @@ export async function updateQuestionSolutionInDb(
     if (online) {
       const res = await fetch(`${API_BASE}/professor/update-question-solution`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ questionId, solutionText, answerKey, questionStem, facultyName, reportId })
       });
       if (res.ok) {
@@ -543,4 +569,54 @@ export async function updateQuestionSolutionInDb(
     console.warn('Update question solution error:', err);
   }
   return { success: false, message: 'Failed to update solution in database' };
+}
+
+export async function fetchProfessorStats(subject?: string | null): Promise<any> {
+  try {
+    const online = await isBackendOnline();
+    if (online) {
+      const url = subject && subject.toLowerCase() !== 'all'
+        ? `${API_BASE}/professor/stats?subject=${encodeURIComponent(subject)}`
+        : `${API_BASE}/professor/stats`;
+      const res = await fetch(url, { headers: getAuthHeaders() });
+      if (res.ok) {
+        return await res.json();
+      }
+    }
+  } catch (err) {
+    console.warn('Stats fetch error:', err);
+  }
+  return null;
+}
+
+export async function fetchAuditLog(limit: number = 50): Promise<any[]> {
+  try {
+    const online = await isBackendOnline();
+    if (online) {
+      const res = await fetch(`${API_BASE}/audit-log?limit=${limit}`, { headers: getAuthHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        return data.logs || [];
+      }
+    }
+  } catch (err) {
+    console.warn('Audit log fetch error:', err);
+  }
+  return [];
+}
+
+export async function fetchDistinctSubjects(): Promise<string[]> {
+  try {
+    const online = await isBackendOnline();
+    if (online) {
+      const res = await fetch(`${API_BASE}/subjects`, { headers: getAuthHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        return data.subjects || ['Physics', 'Zoology', 'Botany'];
+      }
+    }
+  } catch (err) {
+    console.warn('Fetch subjects error:', err);
+  }
+  return ['Physics', 'Zoology', 'Botany'];
 }

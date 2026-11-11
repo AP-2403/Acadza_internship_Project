@@ -21,6 +21,7 @@ import {
   rejectQuestionReport,
   callAIAssist,
   updateQuestionSolutionInDb,
+  fetchAuditLog,
   AIAssistResponse
 } from '../lib/api';
 import { FormattedMathText } from './FormattedMath';
@@ -102,7 +103,8 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
   // Fetch full queue data (reports + triage results + doubts)
   const loadQueueData = async () => {
     setIsRefreshing(true);
-    const { reports, results } = await fetchQueueData(user.subject);
+    const targetSubject = user.role === 'admin' ? selectedSubject : user.subject;
+    const { reports, results } = await fetchQueueData(targetSubject);
     if (reports && reports.length > 0) {
       setLiveReports(reports);
       localStorage.setItem('acadza_live_reports', JSON.stringify(reports));
@@ -120,8 +122,44 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
       });
     }
 
-    const doubts = await fetchLiveDoubts(user.subject);
+    const doubts = await fetchLiveDoubts(targetSubject);
     setLiveDoubts(doubts);
+
+    try {
+      const serverLogs = await fetchAuditLog(50);
+      if (serverLogs && serverLogs.length > 0) {
+        setAuditEntries((prev) => {
+          const map = new Map<string, AuditEntry>();
+          prev.forEach(e => map.set(e.id, e));
+          serverLogs.forEach((l: any) => {
+            const auditId = `server_${l.id}`;
+            const actionType: 'approve' | 'edit_approve' | 'reject' = 
+              l.action.includes('reject') ? 'reject' : 
+              l.action.includes('edit') ? 'edit_approve' : 'approve';
+            map.set(auditId, {
+              id: auditId,
+              reportId: l.target_type === 'report' ? l.target_id : (l.details?.report_id || ''),
+              questionId: l.target_type === 'question' ? l.target_id : (l.details?.question_id || ''),
+              action: actionType,
+              reviewer: l.actor,
+              previousRoute: 'faculty_review',
+              newRoute: actionType === 'reject' ? 'no_change' : 'auto_apply',
+              editApplied: l.details?.edit || null,
+              comment: typeof l.details === 'string' ? l.details : JSON.stringify(l.details),
+              timestamp: l.created_at,
+            });
+          });
+          const combined = Array.from(map.values()).sort(
+            (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          );
+          localStorage.setItem('acadza_audit_log', JSON.stringify(combined));
+          return combined;
+        });
+      }
+    } catch (e) {
+      console.warn('Could not sync server audit log', e);
+    }
+
     setIsRefreshing(false);
   };
 
@@ -129,7 +167,7 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
     loadQueueData();
     const interval = setInterval(loadQueueData, 4000);
     return () => clearInterval(interval);
-  }, [user.subject]);
+  }, [user.subject, user.role, selectedSubject]);
 
   // Index questions by _id
   const questionsMap = useMemo(() => {

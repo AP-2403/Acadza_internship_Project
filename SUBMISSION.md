@@ -68,4 +68,4 @@ EdTech platforms are only as trustworthy as their question bank; a single wrong 
 - [x] **Faculty Review Console** with MathML rendering, surgical diffs, audit trail, keyboard shortcuts, and responsiveness.
 - [x] **Live Console Deployment URL** (Vercel / Render / Netlify).
 - [x] **Public GitHub Repository** link ready for email submission.
-- [x] **Screen Recording** link recorded and tested.
+- [ ] **Screen Recording** (Walkthrough storyboard scripted and ready to record via Loom / Drive).

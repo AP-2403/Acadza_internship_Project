@@ -1,11 +1,13 @@
 """
-SQLite database setup and seeding for Acadza Multi-Role Platform.
+SQLite database setup, schema definitions, and audit logging for Acadza Multi-Role Platform.
 """
 import sqlite3
 import os
 import json
+import hashlib
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import Optional, Dict, Any
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
@@ -20,10 +22,56 @@ if os.environ.get("VERCEL"):
 else:
     DB_PATH = BASE_DIR / "backend" / "acadza.db"
 
+
+def hash_password(password: str) -> str:
+    """Computes salted SHA-256 password hash."""
+    salt = "acadza_salt_2026_"
+    return hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
+
+
+def verify_password(plain: str, stored: str) -> bool:
+    """Verifies password against stored hash with fallback for initial seed plain text."""
+    if plain == stored:
+        return True
+    return hash_password(plain) == stored
+
+
 def get_conn() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def record_audit_event(
+    action: str,
+    actor: str,
+    target_type: Optional[str] = None,
+    target_id: Optional[str] = None,
+    details: Optional[str] = None
+) -> None:
+    """
+    Appends an immutable audit event to the database audit_log table.
+    Tracks all approvals, edits, rejections, student feedback, and logins.
+    """
+    try:
+        conn = get_conn()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO audit_log (action, actor, target_type, target_id, details, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            action,
+            actor,
+            target_type,
+            target_id,
+            details,
+            datetime.now(timezone.utc).isoformat()
+        ))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Warning: could not write audit log: {e}")
+
 
 def init_db():
     conn = get_conn()
@@ -85,12 +133,27 @@ def init_db():
             confidence REAL,
             evidence TEXT,
             student_reply TEXT,
+            faculty_name TEXT,
+            resolved_at TEXT,
             reported_at TEXT NOT NULL,
             session_id TEXT
         )
     """)
 
-    # Seed users (plain text passwords for demo guest login)
+    # 5. Immutable Audit Log table
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            action TEXT NOT NULL,
+            actor TEXT NOT NULL,
+            target_type TEXT,
+            target_id TEXT,
+            details TEXT,
+            created_at TEXT NOT NULL
+        )
+    """)
+
+    # Seed users with salted hashes
     seed_users = [
         ("student",       "guest123", "Aarav Sharma (JEE Aspirant)", "student",   None),
         ("physics_prof",  "guest123", "Prof A",                      "professor", "Physics"),
@@ -102,7 +165,7 @@ def init_db():
         cur.execute(
             """INSERT OR REPLACE INTO users (username, password_hash, name, role, subject)
                VALUES (?, ?, ?, ?, ?)""",
-            (username, pwd, name, role, subject),
+            (username, hash_password(pwd), name, role, subject),
         )
 
     # Seed initial 44 reports if empty
@@ -143,8 +206,8 @@ def init_db():
                 INSERT OR REPLACE INTO reports (
                     report_id, question_id, student_id, subject, comment, source,
                     status, route, verdict, repair, edit_json, confidence,
-                    evidence, student_reply, reported_at, session_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    evidence, student_reply, faculty_name, resolved_at, reported_at, session_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 rid,
                 qid,
@@ -160,13 +223,21 @@ def init_db():
                 triage.get("confidence", 0.95),
                 triage.get("evidence", "Report matches question defect pattern."),
                 triage.get("student_reply", "Thank you for reporting. Faculty has recorded this feedback."),
-                rep.get("reportedAt", datetime.utcnow().isoformat() + "Z"),
+                "System Seed" if status == "auto_applied" else None,
+                datetime.now(timezone.utc).isoformat() if status == "auto_applied" else None,
+                rep.get("reportedAt", datetime.now(timezone.utc).isoformat()),
                 None
             ))
+
+        conn.commit()
+        conn.close()
+        record_audit_event("SYSTEM_INITIALIZED", "system", "database", "reports", "Seeded 44 baseline triage reports")
+        return
 
     conn.commit()
     conn.close()
     print(f"Database initialized successfully at {DB_PATH}")
+
 
 if __name__ == "__main__":
     init_db()

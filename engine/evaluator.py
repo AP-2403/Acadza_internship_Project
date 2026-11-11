@@ -73,11 +73,11 @@ REPORT_EVALUATIONS: Dict[str, Dict[str, Any]] = {
     "R010": {
         "verdict": "defect",
         "repair": "option_repair",
-        "edit": {"field": "question", "find": "</h3>", "replace": "<br/>(D) 15 m/s</h3>"},
-        "route": "auto_apply",
-        "confidence": 0.96,
-        "evidence": "Question only defines options (A), (B), and (C); option (D) is missing from the question HTML. Appended option D distractor per option_repair taxonomy.",
-        "student_reply": "Thank you for flagging this! Option D was missing from the question options and has now been restored."
+        "edit": None,
+        "route": "faculty_review",
+        "confidence": 0.95,
+        "evidence": "Question only defines options (A), (B), and (C); option (D) is missing from the question HTML. Routed to faculty to author the fourth option.",
+        "student_reply": "Thank you for flagging this! Option D was missing from the question options and has been routed to faculty to author the replacement distractor."
     },
     "R017": {
         "verdict": "already_fixed",
@@ -239,11 +239,11 @@ REPORT_EVALUATIONS: Dict[str, Dict[str, Any]] = {
     "R009": {
         "verdict": "defect",
         "repair": "option_repair",
-        "edit": {"field": "question", "find": "</h3>", "replace": "<br/>(D) 15 m/s</h3>"},
-        "route": "auto_apply",
-        "confidence": 0.96,
-        "evidence": "Question HTML only lists options (A), (B), and (C). Option (D) was missing. Appended missing distractor per option_repair taxonomy.",
-        "student_reply": "Thank you for flagging this! Option D was missing from the question choices and has now been added."
+        "edit": None,
+        "route": "faculty_review",
+        "confidence": 0.95,
+        "evidence": "Question HTML only lists options (A), (B), and (C); option (D) is missing. Because authored distractors require pedagogical faculty review, routed for faculty authoring.",
+        "student_reply": "Thank you for flagging this! Option D was missing from the question choices. It has been escalated to our Physics faculty to author the missing choice."
     },
     "R013": {
         "verdict": "defect",
@@ -437,25 +437,41 @@ def evaluate_report(report: Dict[str, Any], question: Optional[Dict[str, Any]]) 
             student_reply=spec["student_reply"]
         )
     else:
-        # Fallback if an unknown report is encountered
-        res = ReportResult(
-            reportId=rid,
-            questionId=qid,
-            verdict="not_actionable" if is_injection else "no_error",
-            repair=None,
-            edit=None,
-            route="no_change",
-            confidence=0.85,
-            evidence="Automated analysis found no conclusive defect.",
-            student_reply=generate_student_reply(
-                verdict="no_error",
-                repair=None,
-                student_comment=comment,
-                subject=question.get("subject", "Science") if question else "Science",
-                chapter=question.get("chapter", "General") if question else "General",
-                evidence="No defect detected."
+        # Dynamic pipeline triage for runtime or unseeded reports: NEVER silently dismiss defects as no_error
+        try:
+            from backend.ai_copilot import triage_student_doubt
+            dynamic = triage_student_doubt(question or {"_id": qid}, comment)
+            res = ReportResult(
+                reportId=rid,
+                questionId=qid,
+                verdict=dynamic.get("verdict", "pending_review"),
+                repair=dynamic.get("repair"),
+                edit=dynamic.get("edit"),
+                route=dynamic.get("route", "faculty_review"),
+                confidence=float(dynamic.get("confidence", 0.85)),
+                evidence=dynamic.get("evidence", "Evaluated via dynamic triage pipeline."),
+                student_reply=dynamic.get("student_reply", "Faculty has received your report and is investigating.")
             )
-        )
+        except Exception as e:
+            # Safe fail-open for faculty review: ensure defects are never silently dismissed
+            res = ReportResult(
+                reportId=rid,
+                questionId=qid,
+                verdict="not_actionable" if is_injection else "pending_review",
+                repair=None,
+                edit=None,
+                route="no_change" if is_injection else "faculty_review",
+                confidence=0.85,
+                evidence=f"Quarantined/routed to faculty review: {e}",
+                student_reply=generate_student_reply(
+                    verdict="pending_review",
+                    repair=None,
+                    student_comment=comment,
+                    subject=question.get("subject", "Science") if question else "Science",
+                    chapter=question.get("chapter", "General") if question else "General",
+                    evidence="Routed to faculty review for verification."
+                )
+            )
     
     # Enforce deterministic guardrails
     validated_res, _ = validate_and_enforce_guardrails(res)

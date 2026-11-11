@@ -29,11 +29,11 @@
     "subConcept": "Electric Flux",
     "level": "MEDIUM",
     "error": 1,
-    "updatedAt": "2026-11-11T02:46:11.013722+00:00",
+    "updatedAt": "2025-10-23T11:36:19.085Z",
     "integerQuestion": {
       "question": "<h3>The charges <math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mrow><mfrac><mrow><mi> q </mi></mrow><mrow><mn> 2 </mn></mrow></mfrac></mrow></math> and <math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mrow><mn> 2 </mn><mi> q </mi></mrow></math> are placed at the centre of face and corner of a cube respectively. Total flux through the cube is <math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mrow><mfrac><mrow><mi> n </mi><mi> q </mi></mrow><mrow><mn> 2 </mn><msub><mi> ε </mi><mrow><mn> 0 </mn></mrow></msub></mrow></mfrac></mrow></math>. The value of ' <math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mrow><mi> n </mi></mrow></math> ' is</h3>",
       "solution": "<h3>For centre of face <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><msub><mi> ϕ </mi><mrow><mn> 1 </mn></mrow></msub><mo>=</mo><mfrac><mrow><mn> 1 </mn></mrow><mrow><mn> 2 </mn></mrow></mfrac><mfrac><mrow><mfrac><mrow><mi> q </mi></mrow><mrow><mn> 2 </mn></mrow></mfrac></mrow><mrow><msub><mi> &epsilon; </mi><mrow><mn> 0 </mn></mrow></msub></mrow></mfrac><mo>=</mo><mfrac><mrow><mi> q </mi></mrow><mrow><mn> 4 </mn><msub><mi> &epsilon; </mi><mrow><mn> 0 </mn></mrow></msub></mrow></mfrac></mrow></math> For corner of a cube <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><msub><mi> ϕ </mi><mrow><mn> 2 </mn></mrow></msub><mo>=</mo><mfrac><mrow><mn> 1 </mn></mrow><mrow><mn> 8 </mn></mrow></mfrac><mfrac><mrow><mn> 2 </mn><mi> q </mi></mrow><mrow><msub><mi> &epsilon; </mi><mrow><mn> 0 </mn></mrow></msub></mrow></mfrac><mo>=</mo><mfrac><mrow><mi> q </mi></mrow><mrow><mn> 4 </mn><msub><mi> &epsilon; </mi><mrow><mn> 0 </mn></mrow></msub></mrow></mfrac></mrow></math> Total flux <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi> ϕ </mi><mo>=</mo><mfrac><mrow><mi> q </mi></mrow><mrow><mn> 4 </mn><msub><mi> &epsilon; </mi><mrow><mn> 0 </mn></mrow></msub></mrow></mfrac><mo>+</mo><mfrac><mrow><mi> q </mi></mrow><mrow><mn> 4 </mn><msub><mi> &epsilon; </mi><mrow><mn> 0 </mn></mrow></msub></mrow></mfrac><mo>=</mo><mfrac><mrow><mi> q </mi></mrow><mrow><mn> 2 </mn><msub><mi> &epsilon; </mi><mrow><mn> 0 </mn></mrow></msub></mrow></mfrac></mrow></math></h3>",
-      "answer": "1",
+      "answer": "2",
       "quesImages": [],
       "solutionImages": []
     },
@@ -69,9 +69,9 @@
     "subConcept": null,
     "level": "EASY",
     "error": 1,
-    "updatedAt": "2026-11-11T02:46:10.948696+00:00",
+    "updatedAt": "2025-11-06T06:07:22.617Z",
     "scq": {
-      "question": "<h3><span style=\"color:#000000\">Aggregates of lymphoid tissue present in the distal portion of the small intestine are known as</h3><h3>(A)<span style=\"color:#000000\"> <span style=\"color:#000000\">Villi<br />(B)<span style=\"color:#000000\"> <span style=\"color:#000000\">Peyer&rsquo;s patches<br />(C)<span style=\"color:#000000\"> <span style=\"color:#000000\">Rugae<br />(D)</span></span></span><span style=\"color:#000000\"> </span></span></span><span style=\"color:#000000\">Choroid plexus</span></span></span></h3>",
+      "question": "<h3><span style=\"color:#000000\">Aggregates of lymphoid tissue present in the distal portion of the small intestine are known as</h3><h3>(A)<span style=\"color:#000000\"> <span style=\"color:#000000\">Villi<br />(B)<span style=\"color:#000000\"> <span style=\"color:#000000\">Peyer&rsquo;s patches<br />(C)<span style=\"color:#000000\"> <span style=\"color:#000000\">Rugae<br />(D)</span></span></span><span style=\"color:#000000\"> </span></span></span><span style=\"color:#000000\">Choroid plexux</span></span></span></h3>",
       "solution": "<h3><span style=\"color:#000000\">In the wall of small intestine, lymphatic tissues are present called Peyer&rsquo;s patches. These are groups of lymph nodules that are most numerous in the ileum. They produce lymphocytes.<br />\r\n<span style=\"color:#000000\">Rugae are prominant folds found in empty stomach. Maceus membrane of small intestine is grown into many finger-like projections known as villi.</span></span>​​​​​​​</h3>",
       "answer": "B",
       "quesImages": [],
@@ -129,9 +129,9 @@
     "subConcept": "Bulk Modulus and compressibility",
     "level": "MEDIUM",
     "error": 1,
-    "updatedAt": "2026-11-11T02:46:10.984686+00:00",
+    "updatedAt": "2026-02-06T19:13:45.601Z",
     "integerQuestion": {
-      "question": "<h3>The volume contraction of a solid copper cube of edge length 10 cm, when subjected to a hydraulic pressure of <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mn>7</mn><mi>&times;</mi><msup><mn>10</mn><mrow><mn>6</mn></mrow></msup><mrow><mtext>&nbsp;</mtext><mi mathvariant=\"normal\">P</mi><mi mathvariant=\"normal\">a</mi></mrow></mrow></math>, would be <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi>_</mi><mi>_</mi><mi>_</mi><mi>_</mi></mrow></math> <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><msup><mrow><mi mathvariant=\"normal\">m</mi><mi mathvariant=\"normal\">m</mi></mrow><mrow><mn>3</mn></mrow></msup></mrow></math>.</h3>\n\n<h3>(Given bulk modulus of copper <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mo>=</mo><mn>1.4</mn><mi>&times;</mi><msup><mn>10</mn><mrow><mn>11</mn></mrow></msup><msup><mrow><mi mathvariant=\"normal\">N</mi><mi mathvariant=\"normal\">m</mi></mrow><mrow><mo>&minus;</mo><mn>2</mn></mrow></msup></mrow></math> )</h3>\n",
+      "question": "<h3>The volume contraction of a solid copper cube, when subjected to a hydraulic pressure of <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mn>7</mn><mi>&times;</mi><msup><mn>10</mn><mrow><mn>6</mn></mrow></msup><mrow><mtext>&nbsp;</mtext><mi mathvariant=\"normal\">P</mi><mi mathvariant=\"normal\">a</mi></mrow></mrow></math>, would be <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi>_</mi><mi>_</mi><mi>_</mi><mi>_</mi></mrow></math> <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><msup><mrow><mi mathvariant=\"normal\">m</mi><mi mathvariant=\"normal\">m</mi></mrow><mrow><mn>3</mn></mrow></msup></mrow></math>.</h3>\n\n<h3>(Given bulk modulus of copper <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mo>=</mo><mn>1.4</mn><mi>&times;</mi><msup><mn>10</mn><mrow><mn>11</mn></mrow></msup><msup><mrow><mi mathvariant=\"normal\">N</mi><mi mathvariant=\"normal\">m</mi></mrow><mrow><mo>&minus;</mo><mn>2</mn></mrow></msup></mrow></math> )</h3>\n",
       "solution": "<h3><math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mstyle displaystyle=\"true\"><mrow><mi>B</mi><mo>=</mo><mfrac><mrow><mi>&Delta;</mi><mi>P</mi></mrow><mrow><mfrac><mrow><mi>&Delta;</mi><mi>V</mi></mrow><mrow><mi>V</mi></mrow></mfrac></mrow></mfrac></mrow></mstyle></math></h3>\n\n<h3><math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mstyle displaystyle=\"true\"><mrow><mi>&Delta;</mi><mi>V</mi><mo>=</mo><mfrac><mrow><mn>7</mn><mi>&times;</mi><msup><mn>10</mn><mrow><mn>6</mn></mrow></msup></mrow><mrow><mn>1.4</mn><mi>&times;</mi><msup><mn>10</mn><mrow><mn>11</mn></mrow></msup></mrow></mfrac><mi>&times;</mi><msup><mrow><mo fence=\"true\" form=\"prefix\" stretchy=\"true\">(</mo><mn>10</mn><mi>&times;</mi><msup><mn>10</mn><mrow><mo>&minus;</mo><mn>2</mn></mrow></msup><mo fence=\"true\" form=\"postfix\" stretchy=\"true\">)</mo></mrow><mrow><mn>3</mn></mrow></msup></mrow></mstyle></math></h3>\n\n<h3><math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi>&Delta;</mi><mi>V</mi><mo>=</mo><mn>50</mn><msup><mrow><mtext>&nbsp;</mtext><mi mathvariant=\"normal\">m</mi><mi mathvariant=\"normal\">m</mi></mrow><mrow><mn>3</mn></mrow></msup></mrow></math></h3>\n",
       "answer": "50",
       "quesImages": [],
@@ -189,9 +189,9 @@
     "subConcept": "Coulomb's Law",
     "level": "MEDIUM",
     "error": 1,
-    "updatedAt": "2026-11-11T02:46:10.980691+00:00",
+    "updatedAt": "2026-01-20T07:21:22.252Z",
     "scq": {
-      "question": "<h3>There are two charges <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mo>+</mo><mn> 3 </mn><mi> &mu; </mi><mi> C </mi></mrow></math> and <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mo>&minus;</mo><mn> 4 </mn><mi> &mu; </mi><mi> C </mi></mrow></math> placed at a certain distance apart. The ratio of coulombic forces acting on them will be<br />(A) <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mn> 9 </mn><mi>:</mi><mn> 16 </mn></mrow></math><br />(B) <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mn> 2 </mn><mi>:</mi><msqrt><mrow><mn> 3 </mn></mrow></msqrt></mrow></math><br />(C) 1 : 1<br />(D) <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mn> 3 </mn><mi>:</mi><mn> 4 </mn></mrow></math></h3>\n",
+      "question": "<h3>There are two charges <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mo>+</mo><mn> 3 </mn><mi> &mu; </mi><mi> C </mi></mrow></math> and <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mo>&minus;</mo><mn> 4 </mn><mi> &mu; </mi><mi> C </mi></mrow></math> placed at a certain distance apart. The ratio of coulombic forces acting on them will be<br />(A) <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mn> 9 </mn><mi>:</mi><mn> 16 </mn></mrow></math><br />(B) <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mn> 2 </mn><mi>:</mi><msqrt><mrow><mn> 3 </mn></mrow></msqrt></mrow></math><br />(C) <br />(D) <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mn> 3 </mn><mi>:</mi><mn> 4 </mn></mrow></math></h3>\n",
       "solution": "<h3><math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><msub><mover><mrow><mi> F </mi></mrow><mo stretchy=\"true\">&rarr;</mo></mover><mrow><mn> 12 </mn></mrow></msub><mo>+</mo><msub><mover><mrow><mi> F </mi></mrow><mo stretchy=\"true\">&rarr;</mo></mover><mrow><mn> 21 </mn></mrow></msub><mo>=</mo><mn> 0 </mn></mrow></math><br />\n<br />\n<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mrow><mo fence=\"true\" form=\"prefix\" stretchy=\"true\">|</mo><msub><mover><mrow><mi> F </mi></mrow><mo stretchy=\"true\">&rarr;</mo></mover><mrow><mn> 12 </mn></mrow></msub><mo fence=\"true\" form=\"postfix\" stretchy=\"true\">|</mo></mrow><mo>=</mo><mrow><mo fence=\"true\" form=\"prefix\" stretchy=\"true\">|</mo><mo>&minus;</mo><msub><mover><mrow><mi> F </mi></mrow><mo stretchy=\"true\">&rarr;</mo></mover><mrow><mn> 21 </mn></mrow></msub><mo fence=\"true\" form=\"postfix\" stretchy=\"true\">|</mo></mrow></mrow></math></h3>\n",
       "answer": "C",
       "quesImages": [],
@@ -296,9 +296,9 @@
     "subConcept": null,
     "level": "EASY",
     "error": 1,
-    "updatedAt": "2026-11-11T02:46:10.922114+00:00",
+    "updatedAt": "2025-11-06T05:50:58.617Z",
     "scq": {
-      "question": "<h3><span style=\"color:#000000\">Which tissue is present in the lining of small intestine?</h3><h3>(A)<span style=\"color:#000000\"> <span style=\"color:#000000\">Epithelial tissue<br />(B)<span style=\"color:#000000\"> <span style=\"color:#000000\">Connective tissue<br />(C)<span style=\"color:#000000\"> <span style=\"color:#000000\">Nervous tissue<br />(D)</span></span></span><span style=\"color:#000000\"> </span></span></span><span style=\"color:#000000\">Muscular tissue</span></span></span></h3>",
+      "question": "<h3><span style=\"color:#000000\">Which tissue is present in the lining of small intestine?</h3><h3>(A)<span style=\"color:#000000\"> <span style=\"color:#000000\">Epithellial tisue<br />(B)<span style=\"color:#000000\"> <span style=\"color:#000000\">Connective tissue<br />(C)<span style=\"color:#000000\"> <span style=\"color:#000000\">Nervous tissue<br />(D)</span></span></span><span style=\"color:#000000\"> </span></span></span><span style=\"color:#000000\">Muscular tissue</span></span></span></h3>",
       "solution": "<h3><span style=\"color:#000000\">Epithelial tissue has free surfaces, which faces either a body fluid or the outside environment and thus, provides a covering or a lining for some part of body. It is found on a lining of small intestine and helps in secretion and absorption</span></h3>",
       "answer": "A",
       "quesImages": [],
@@ -316,11 +316,11 @@
     "subConcept": "Pressure on the walls of container.",
     "level": "MEDIUM",
     "error": 1,
-    "updatedAt": "2026-11-11T02:46:10.930204+00:00",
+    "updatedAt": "2026-01-20T07:20:23.642Z",
     "scq": {
       "question": "<h3>The density of a gas is <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mn> 9 </mn><mi>&times;</mi><msup><mn> 10 </mn><mrow><mo>&minus;</mo><mn> 2 </mn></mrow></msup><mrow><mtext> </mtext><mi mathvariant=\"normal\"> k </mi><mi mathvariant=\"normal\"> g </mi></mrow><mo>/</mo><msup><mi> m </mi><mrow><mn> 3 </mn></mrow></msup></mrow></math> and root mean square velocity of gas molecules is <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mn> 400 </mn><mrow><mtext> </mtext><mi mathvariant=\"normal\"> m </mi></mrow><mo>/</mo><mi> s </mi></mrow></math>. The pressure exerted by the gas on the walls of the vessel is<br />(A) <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mn> 4556 </mn><mrow><mtext> </mtext><mi mathvariant=\"normal\"> N </mi></mrow><mo>/</mo><msup><mi> m </mi><mrow><mn> 2 </mn></mrow></msup></mrow></math><br />(B) <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mn> 8225 </mn><mrow><mtext> </mtext><mi mathvariant=\"normal\"> N </mi></mrow><mo>/</mo><msup><mi> m </mi><mrow><mn> 2 </mn></mrow></msup></mrow></math><br />(C) <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mn> 7520 </mn><mrow><mtext> </mtext><mi mathvariant=\"normal\"> N </mi></mrow><mo>/</mo><msup><mi> m </mi><mrow><mn> 2 </mn></mrow></msup></mrow></math><br />(D) <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mn> 4800 </mn><mrow><mtext> </mtext><mi mathvariant=\"normal\"> N </mi></mrow><mo>/</mo><msup><mi> m </mi><mrow><mn> 2 </mn></mrow></msup></mrow></math></h3>\n",
       "solution": "<h3>Pressure of the gas <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi> P </mi><mo>=</mo><mfrac><mrow><mn> 1 </mn></mrow><mrow><mn> 3 </mn></mrow></mfrac><mi> &rho; </mi><msup><mrow><mo fence=\"true\" form=\"prefix\" stretchy=\"true\">(</mo><msub><mi> v </mi><mrow><mrow><mi mathvariant=\"normal\"> r </mi><mi mathvariant=\"normal\"> m </mi><mi mathvariant=\"normal\"> s </mi></mrow></mrow></msub><mo fence=\"true\" form=\"postfix\" stretchy=\"true\">)</mo></mrow><mrow><mn> 2 </mn></mrow></msup></mrow></math> <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi> P </mi><mo>=</mo><mfrac><mrow><mn> 1 </mn></mrow><mrow><mn> 3 </mn></mrow></mfrac><mi>&times;</mi><mn> 9 </mn><mi>&times;</mi><msup><mn> 10 </mn><mrow><mo>&minus;</mo><mn> 2 </mn></mrow></msup><mi>&times;</mi><mo stretchy=\"false\">(</mo><mn> 400 </mn><msup><mo stretchy=\"false\">)</mo><mrow><mn> 2 </mn></mrow></msup><mo>=</mo><mn> 4800 </mn><mrow><mtext> </mtext><mi mathvariant=\"normal\"> N </mi></mrow><mo>/</mo><msup><mi> m </mi><mrow><mn> 2 </mn></mrow></msup></mrow></math></h3>\n",
-      "answer": "D",
+      "answer": "A",
       "quesImages": [],
       "solutionImages": []
     },
@@ -456,10 +456,10 @@
     "subConcept": null,
     "level": "EASY",
     "error": 1,
-    "updatedAt": "2026-11-11T02:46:10.989547+00:00",
+    "updatedAt": "2026-01-23T16:19:27.647Z",
     "scq": {
       "question": "<h3><span style=\"color:#000000\">The kinetic energy of an electron with de-Broglie wavelength of 0.3 nanometer is <span style=\"color:#000000\"> </span></span><br />\n(A) 0.168 <span style=\"color:#000000\">eV<br />\n(B)&nbsp;<span style=\"color:#000000\">16.8 <span style=\"color:#000000\">eV<br />\n<span style=\"color:#000000\">(C) 1.68 <span style=\"color:#000000\">eV<br />\n(D)&nbsp;</span></span>2.5 </span></span>eV</span></h3>\n",
-      "solution": "<h3><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mi>&#x003BB;</mi><mo>&#x0003D;</mo><mfrac><mrow><mi>h</mi></mrow><mrow><mo stretchy=\"false\">&#x0007C;</mo><mi>p</mi><mo stretchy=\"false\">&#x0007C;</mo></mrow></mfrac><mo>&#x0003D;</mo><mfrac><mrow><mi>h</mi></mrow><mrow><mo stretchy=\"false\">&#x0007C;</mo><mi>I</mi><mo stretchy=\"false\">&#x0007C;</mo></mrow></mfrac></mrow></mstyle></math> <math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mo>&#x0003D;</mo><mn>2.65</mn><mi>&#x000D7;</mi><msup><mn>10</mn><mrow><mo>&#x02212;</mo><mn>18</mn></mrow></msup><mi>J</mi></mrow></mstyle></math> <math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mo>&#x0003D;</mo><mn>16.8</mn><mi>e</mi><mi>V</mi></mrow></mstyle></math></h3>",
+      "solution": "<h3><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mo>&#x0003D;</mo><mn>5.469</mn><mi>&#x000D7;</mi><msup><mn>10</mn><mrow><mo>&#x02212;</mo><mn>10</mn></mrow></msup><mi>m</mi><mo>&#x0003D;</mo><mn>5.47</mn><mi>\\AA</mi></mrow></mstyle></math> <math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mi>&#x003BB;</mi><mo>&#x0003D;</mo><mfrac><mrow><mi>h</mi></mrow><mrow><mo stretchy=\"false\">&#x0007C;</mo><mi>p</mi><mo stretchy=\"false\">&#x0007C;</mo></mrow></mfrac><mo>&#x0003D;</mo><mfrac><mrow><mi>h</mi></mrow><mrow><mo stretchy=\"false\">&#x0007C;</mo><mi>I</mi><mo stretchy=\"false\">&#x0007C;</mo></mrow></mfrac></mrow></mstyle></math> <math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mo>&#x0003D;</mo><mn>2.65</mn><mi>&#x000D7;</mi><msup><mn>10</mn><mrow><mo>&#x02212;</mo><mn>18</mn></mrow></msup><mi>J</mi></mrow></mstyle></math> <math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mo>&#x0003D;</mo><mn>16.8</mn><mi>e</mi><mi>V</mi></mrow></mstyle></math></h3>",
       "answer": "B",
       "quesImages": [],
       "solutionImages": []
@@ -476,9 +476,9 @@
     "subConcept": null,
     "level": "EASY",
     "error": 1,
-    "updatedAt": "2026-11-11T02:46:10.939290+00:00",
+    "updatedAt": "2025-10-23T09:32:19.634Z",
     "scq": {
-      "question": "<h3><span style=\"color:#000000\">A resistance of 40 ohm and an inductance of 95.5 mH are connected in series in a 50 cycles/second ac circuit. The impedance of this combination is very nearly</h3><h3>(A)<span style=\"color:#000000\"> <span style=\"color:#000000\">30 ohm<br />(B)<span style=\"color:#000000\"> <span style=\"color:#000000\">40 ohm<br />(C)<span style=\"color:#000000\"> <span style=\"color:#000000\">50 ohm<br />(D)</span></span></span><span style=\"color:#000000\"> </span></span></span><span style=\"color:#000000\">60 ohm</span></span></span></h3>",
+      "question": "<h3><span style=\"color:#000000\">A resistance of 40 ohm and an inductance are connected in series in a 50 cycles/second ac circuit. The impedance of this combination is very nearly</h3><h3>(A)<span style=\"color:#000000\"> <span style=\"color:#000000\">30 ohm<br />(B)<span style=\"color:#000000\"> <span style=\"color:#000000\">40 ohm<br />(C)<span style=\"color:#000000\"> <span style=\"color:#000000\">50 ohm<br />(D)</span></span></span><span style=\"color:#000000\"> </span></span></span><span style=\"color:#000000\">60 ohm</span></span></span></h3>",
       "solution": "<h3><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mi>Z</mi><mo>&#x0003D;</mo><msqrt><mrow><msup><mi>R</mi><mrow><mn>2</mn></mrow></msup><mo>&#x0002B;</mo><mo stretchy=\"false\">&#x00028;</mo><mn>2</mn><mi>&#x003C0;</mi><mi>v</mi><mi>L</mi><msup><mo stretchy=\"false\">&#x00029;</mo><mrow><mn>2</mn></mrow></msup></mrow></msqrt></mrow></mstyle></math> <math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mo>&#x0003D;</mo><msqrt><mrow><mo stretchy=\"false\">&#x00028;</mo><mn>40</mn><msup><mo stretchy=\"false\">&#x00029;</mo><mrow><mn>2</mn></mrow></msup><mo>&#x0002B;</mo><mn>4</mn><msup><mi>&#x003C0;</mi><mrow><mn>2</mn></mrow></msup><mi>&#x000D7;</mi><mo stretchy=\"false\">&#x00028;</mo><mn>50</mn><msup><mo stretchy=\"false\">&#x00029;</mo><mrow><mn>2</mn></mrow></msup><mi>&#x000D7;</mi><msup><mrow><mo stretchy=\"true\" fence=\"true\" form=\"prefix\">&#x00028;</mo><mn>95.5</mn><mi>&#x000D7;</mi><msup><mn>10</mn><mrow><mo>&#x02212;</mo><mn>3</mn></mrow></msup><mo stretchy=\"true\" fence=\"true\" form=\"postfix\">&#x00029;</mo></mrow><mrow><mn>2</mn></mrow></msup></mrow></msqrt><mo>&#x0003D;</mo><mn>50</mn><mrow><mi mathvariant=\"normal\">o</mi><mi mathvariant=\"normal\">h</mi><mi mathvariant=\"normal\">m</mi></mrow></mrow></mstyle></math></h3>",
       "answer": "C",
       "quesImages": [],
@@ -536,9 +536,9 @@
     "subConcept": null,
     "level": "EASY",
     "error": 1,
-    "updatedAt": "2026-11-11T02:46:10.966711+00:00",
+    "updatedAt": "2025-11-06T07:50:17.57Z",
     "scq": {
-      "question": "<h3><span style=\"color:#000000\">Which of the following is the green expanded part of<span style=\"color:#000000\">leaf with vein and veinlets?</h3><h3>(A) Petiole<br />(B) Node</span><br />(C) Stipule<br />(D) Lamina</span></span></span></h3>",
+      "question": "<h3><span style=\"color:#000000\">(NEET 2019) Which of the following is the green expanded part of<span style=\"color:#000000\">leaf with vein and veinlets?</h3><h3>(A) Petiole<br />(B) Node</span><br />(C) Stipule<br />(D) Lamina</span></span></span></h3>",
       "solution": "<h3><span style=\"color:#000000\">Lamina on the leaf blade is usually flattened green photosynthetic part consisting leaf veins and veinlets. Its upper surface is called adaxial while the lower surface is called abaxial. The shape margin, apex, surface and extent of incision of lamina vary in different leaves.</span></h3>",
       "answer": "D",
       "quesImages": [],
@@ -576,10 +576,10 @@
     "subConcept": null,
     "level": "EASY",
     "error": 1,
-    "updatedAt": "2026-11-11T02:46:10.995686+00:00",
+    "updatedAt": "2026-02-13T21:04:03.636Z",
     "integerQuestion": {
-      "question": "<h3><span style=\"color:#000000\">A body of mass 2 kg is kept by pressing to a vertical wall by a force of 100 N. The friction between wall and body is 0.3. Then the frictional force is equal to (in N)</span></h3>\n",
-      "solution": "<h3>Maximum available friction f_max = mu * N = 0.3 * 100 = 30 N. Since downward weight W = mg = 20 N < 30 N, the body does not slide. Static friction self-adjusts to equal the applied load: f = 20 N.</h3>",
+      "question": "<h3><span style=\"color:#000000\">A body of mass 2 kg is kept by pressing to a vertical wall by a force of 100 N. The friction between wall and body is 0.3. Then the frictional force is equal to</span></h3>\n",
+      "solution": "<h3>The maximum friction available to prevent sliding is given by:<br />\n<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>f</mi><mrow><mi>m</mi><mi>a</mi><mi>x</mi></mrow></msub><mo>=</mo><mi>&#956;</mi><mo>&#215;</mo><mi>N</mi><mo>=</mo><mn>0</mn><mo>.</mo><mn>3</mn><mo>&#215;</mo><mn>100</mn><mo>=</mo><mn>30</mn><mo>&#160;</mo><mi>N</mi></math><br />\nThe force pulling the body down is its&nbsp;weight,<br />\n<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>W</mi><mo>=</mo><mi>m</mi><mi>g</mi><mo>=</mo><mn>2</mn><mo>&#215;</mo><mn>10</mn><mo>=</mo><mn>20</mn><mo>&#160;</mo><mi>N</mi></math><br />\nStatic friction is a self-adjusting force that only acts to balance the applied force, up to its maximum value. Since the weight (W = 20 N)&nbsp;is<strong>&nbsp;</strong>less&nbsp;than the maximum available friction (<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>f</mi><mrow><mi>m</mi><mi>a</mi><mi>x</mi></mrow></msub><mo>=</mo><mn>30</mn><mo>&#160;</mo><mi>N</mi></math>),&nbsp;the body remains at rest. Therefore, the actual frictional force is exactly equal to the weight.<br />\n​​​​​​​</h3>\n",
       "answer": "20",
       "quesImages": [],
       "solutionImages": []
@@ -616,7 +616,7 @@
     "subConcept": "Linear function",
     "level": "MEDIUM",
     "error": 1,
-    "updatedAt": "2026-11-11T02:46:10.977113+00:00",
+    "updatedAt": "2025-12-27T14:39:34.541Z",
     "mcq": {
       "question": "<h3>A sample of nuclei X contains <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mn> 48 </mn><mi>&times;</mi><msup><mn> 10 </mn><mrow><mn> 23 </mn></mrow></msup></mrow></math> nuclei at some time and reduced to <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mn> 6 </mn><mi>&times;</mi><msup><mn> 10 </mn><mrow><mn> 23 </mn></mrow></msup></mrow></math> nuclei in 3 minutes. The mean life of nucleus <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi> X </mi></mrow></math> is roughly?<br />\n(A) 0.693 min<br />\n(B) 1.44 min<br />\n(C) 2.079 min<br />\n(D) 4.329 min&nbsp;</h3>\n",
       "solution": "<p>A sample of nuclei decreases from <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mn>48</mn><mo>&times;</mo><msup><mn>10</mn><mn>23</mn></msup> </math> to <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mn>6</mn><mo>&times;</mo><msup><mn>10</mn><mn>23</mn></msup> </math> in <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mn>3</mn></math> minutes.</p>\n\n<p>Radioactive decay law: <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mi>N</mi> <mo>=</mo> <msub><mi>N</mi><mn>0</mn></msub> <msup> <mi>e</mi> <mrow> <mo>&minus;</mo> <mfrac> <mi>t</mi> <mi>&tau;</mi> </mfrac> </mrow> </msup> </math></p>\n\n<p>Here <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mfrac> <mi>N</mi> <msub><mi>N</mi><mn>0</mn></msub> </mfrac> <mo>=</mo> <mfrac><mn>6</mn><mn>48</mn></mfrac> <mo>=</mo> <mfrac><mn>1</mn><mn>8</mn></mfrac> </math> so <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mfrac> <mi>N</mi> <msub><mi>N</mi><mn>0</mn></msub> </mfrac> <mo>=</mo> <msup> <mi>e</mi> <mrow> <mo>&minus;</mo> <mfrac> <mi>t</mi> <mi>&tau;</mi> </mfrac> </mrow> </msup> <mo>=</mo> <mfrac><mn>1</mn><mn>8</mn></mfrac> </math></p>\n\n<p>Taking natural logarithm: <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mi>ln</mi> <mo stretchy=\"false\">(</mo> <mfrac><mn>1</mn><mn>8</mn></mfrac> <mo stretchy=\"false\">)</mo> <mo>=</mo> <mo>&minus;</mo> <mfrac> <mi>t</mi> <mi>&tau;</mi> </mfrac> </math> so <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mfrac> <mi>t</mi> <mi>&tau;</mi> </mfrac> <mo>=</mo> <mi>ln</mi> <mo stretchy=\"false\">(</mo> <mn>8</mn> <mo stretchy=\"false\">)</mo> </math> and therefore <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mi>&tau;</mi> <mo>=</mo> <mfrac> <mi>t</mi> <mi>ln⁡(8)</mi> </mfrac> </math> .</p>\n\n<p>Since <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mi>t</mi><mo>=</mo><mn>3</mn><mo>&nbsp;</mo><mi>min</mi> </math> and <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mi>ln</mi> <mo stretchy=\"false\">(</mo> <mn>8</mn> <mo stretchy=\"false\">)</mo> <mo>=</mo> <mi>ln</mi> <mo stretchy=\"false\">(</mo> <msup><mn>2</mn><mn>3</mn></msup> <mo stretchy=\"false\">)</mo> <mo>=</mo> <mn>3</mn><mi>ln</mi> <mo stretchy=\"false\">(</mo><mn>2</mn><mo stretchy=\"false\">)</mo> <mo>&asymp;</mo> <mn>2.079</mn> </math> we get <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mi>&tau;</mi> <mo>=</mo> <mfrac> <mn>3</mn> <mn>2.079</mn> </mfrac> <mo>&asymp;</mo> <mn>1.44</mn><mo>&nbsp;</mo><mi>min</mi> </math> .</p>\n\n<p>Hence the mean life of the nucleus is <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mi>&tau;</mi><mo>&asymp;</mo><mn>1.44</mn><mo>&nbsp;</mo><mi>min</mi> </math> .</p>\n",
@@ -628,7 +628,13 @@
       "solutionImages": []
     },
     "errorHistory": [],
-    "scq": {}
+    "scq": {
+      "question": "<h3>A sample of nuclei X contains <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mn> 48 </mn><mi>&times;</mi><msup><mn> 10 </mn><mrow><mn> 23 </mn></mrow></msup></mrow></math> nuclei at some time and reduced to <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mn> 6 </mn><mi>&times;</mi><msup><mn> 10 </mn><mrow><mn> 23 </mn></mrow></msup></mrow></math> nuclei in 3 minutes. The mean life of nucleus <math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi> X </mi></mrow></math> is roughly?<br />\n(A) 0.693 min<br />\n(B) 1.44 min<br />\n(C) 2.079 min<br />\n(D) 4.329 min&nbsp;</h3>\n",
+      "solution": "<p>A sample of nuclei decreases from <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mn>48</mn><mo>&times;</mo><msup><mn>10</mn><mn>23</mn></msup> </math> to <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mn>6</mn><mo>&times;</mo><msup><mn>10</mn><mn>23</mn></msup> </math> in <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mn>3</mn></math> minutes.</p>\n\n<p>Radioactive decay law: <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mi>N</mi> <mo>=</mo> <msub><mi>N</mi><mn>0</mn></msub> <msup> <mi>e</mi> <mrow> <mo>&minus;</mo> <mfrac> <mi>t</mi> <mi>&tau;</mi> </mfrac> </mrow> </msup> </math></p>\n\n<p>Here <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mfrac> <mi>N</mi> <msub><mi>N</mi><mn>0</mn></msub> </mfrac> <mo>=</mo> <mfrac><mn>6</mn><mn>48</mn></mfrac> <mo>=</mo> <mfrac><mn>1</mn><mn>8</mn></mfrac> </math> so <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mfrac> <mi>N</mi> <msub><mi>N</mi><mn>0</mn></msub> </mfrac> <mo>=</mo> <msup> <mi>e</mi> <mrow> <mo>&minus;</mo> <mfrac> <mi>t</mi> <mi>&tau;</mi> </mfrac> </mrow> </msup> <mo>=</mo> <mfrac><mn>1</mn><mn>8</mn></mfrac> </math></p>\n\n<p>Taking natural logarithm: <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mi>ln</mi> <mo stretchy=\"false\">(</mo> <mfrac><mn>1</mn><mn>8</mn></mfrac> <mo stretchy=\"false\">)</mo> <mo>=</mo> <mo>&minus;</mo> <mfrac> <mi>t</mi> <mi>&tau;</mi> </mfrac> </math> so <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mfrac> <mi>t</mi> <mi>&tau;</mi> </mfrac> <mo>=</mo> <mi>ln</mi> <mo stretchy=\"false\">(</mo> <mn>8</mn> <mo stretchy=\"false\">)</mo> </math> and therefore <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mi>&tau;</mi> <mo>=</mo> <mfrac> <mi>t</mi> <mi>ln⁡(8)</mi> </mfrac> </math> .</p>\n\n<p>Since <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mi>t</mi><mo>=</mo><mn>3</mn><mo>&nbsp;</mo><mi>min</mi> </math> and <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mi>ln</mi> <mo stretchy=\"false\">(</mo> <mn>8</mn> <mo stretchy=\"false\">)</mo> <mo>=</mo> <mi>ln</mi> <mo stretchy=\"false\">(</mo> <msup><mn>2</mn><mn>3</mn></msup> <mo stretchy=\"false\">)</mo> <mo>=</mo> <mn>3</mn><mi>ln</mi> <mo stretchy=\"false\">(</mo><mn>2</mn><mo stretchy=\"false\">)</mo> <mo>&asymp;</mo> <mn>2.079</mn> </math> we get <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mi>&tau;</mi> <mo>=</mo> <mfrac> <mn>3</mn> <mn>2.079</mn> </mfrac> <mo>&asymp;</mo> <mn>1.44</mn><mo>&nbsp;</mo><mi>min</mi> </math> .</p>\n\n<p>Hence the mean life of the nucleus is <math xmlns=\"http://www.w3.org/1998/Math/MathML\"> <mi>&tau;</mi><mo>&asymp;</mo><mn>1.44</mn><mo>&nbsp;</mo><mi>min</mi> </math> .</p>\n",
+      "answer": "B",
+      "quesImages": [],
+      "solutionImages": []
+    }
   },
   {
     "_id": "60f744b3f1b9bc7cc7b4a949",
@@ -640,11 +646,11 @@
     "subConcept": null,
     "level": "EASY",
     "error": 1,
-    "updatedAt": "2026-11-11T02:46:11.021127+00:00",
+    "updatedAt": "2025-10-23T09:32:22.361Z",
     "scq": {
       "question": "<h3><span style=\"color:#000000\">In a LCR circuit the pd between the terminals of the inductance is 60 V, between the terminals of the capacitor is 30V and that between the terminals of resistance is 40V. the supply voltage will be equal to &hellip;&hellip;<span style=\"color:#000000\"></h3><h3>(A)<span style=\"color:#000000\"> <span style=\"color:#000000\">50 V<br />(B)<span style=\"color:#000000\"> <span style=\"color:#000000\">70 V<br />(C)<span style=\"color:#000000\"> </span><span style=\"color:#000000\">130 V<br />(D)</span></span></span><span style=\"color:#000000\"> </span></span></span><span style=\"color:#000000\">10 V</span></span></span></h3>",
-      "solution": "<h3>Supply voltage V = sqrt(V_R^2 + (V_L - V_C)^2) = sqrt(40^2 + (60 - 30)^2) = 50 V. Hence, correct option is (A).</h3>",
-      "answer": "A",
+      "solution": "<h3><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mi>V</mi><mo>&#x0003D;</mo><msqrt><mrow><msubsup><mi>V</mi><mrow><mi>R</mi></mrow><mrow><mn>2</mn></mrow></msubsup><mo>&#x0002B;</mo><msup><mrow><mo stretchy=\"true\" fence=\"true\" form=\"prefix\">&#x00028;</mo><msub><mi>V</mi><mrow><mi>L</mi></mrow></msub><mo>&#x02212;</mo><msub><mi>V</mi><mrow><mi>C</mi></mrow></msub><mo stretchy=\"true\" fence=\"true\" form=\"postfix\">&#x00029;</mo></mrow><mrow><mn>2</mn></mrow></msup></mrow></msqrt></mrow></mstyle></math> <math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mo>&#x0003D;</mo><msqrt><mrow><mo stretchy=\"false\">&#x00028;</mo><mn>40</mn><msup><mo stretchy=\"false\">&#x00029;</mo><mrow><mn>2</mn></mrow></msup><mo>&#x0002B;</mo><mo stretchy=\"false\">&#x00028;</mo><mn>60</mn><mo>&#x02212;</mo><mn>30</mn><msup><mo stretchy=\"false\">&#x00029;</mo><mrow><mn>2</mn></mrow></msup></mrow></msqrt><mo>&#x0003D;</mo><mn>50</mn><mrow><mtext>&#x000A0;</mtext><mi mathvariant=\"normal\">V</mi></mrow></mrow></mstyle></math></h3>",
+      "answer": "C",
       "quesImages": [],
       "solutionImages": []
     },
@@ -720,10 +726,10 @@
     "subConcept": null,
     "level": "EASY",
     "error": 1,
-    "updatedAt": "2026-11-11T02:46:10.953895+00:00",
+    "updatedAt": "2025-10-23T10:53:54.666Z",
     "integerQuestion": {
       "question": "<h3><span style=\"color:#000000\">A wooden cube just floats inside water when a 800 g mass is placed on it. When the mass is removed, the cube is 2 cm above the water level. What is the size of the side of the cube (in cm) ?</span></h3>",
-      "solution": "<h3><span style=\"color:#000000\">Let a be the size of each side of the cube. Then,<br />\r\n\r\n <span style=\"color:#000000\">800 &times; g = (2) &times; (a<span style=\"color:#000000\"><sup>2</sup><span style=\"color:#000000\">) &times; 1 &times; g</span></span><br />\r\n\r\n <span style=\"color:#000000\">a = 20 cm</span></span></span></h3>",
+      "solution": "<h3><span style=\"color:#000000\">Let a be the size of each side of the cube. Then,<br />\r\n\r\n <span style=\"color:#000000\">800 &times; g = (2) &times; (a<span style=\"color:#000000\"><sup>2</sup><span style=\"color:#000000\">) &times; 1 &times; g</span></span><br />\r\n\r\n <span style=\"color:#000000\">a = 40 cm</span></span></span></h3>",
       "answer": "20",
       "quesImages": [],
       "solutionImages": []
@@ -740,9 +746,9 @@
     "subConcept": null,
     "level": "MEDIUM",
     "error": 1,
-    "updatedAt": "2026-11-11T02:46:10.962511+00:00",
+    "updatedAt": "2026-11-11T04:07:26.638111+00:00",
     "scq": {
-      "question": "<h3>Two blocks of masses 10 kg and 4 kg are connected by a spring of negligible mass and placed on a frictionless horizontal surface. An impulse gives a velocity of <math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mn>14</mn><mrow><mtext>&#x000A0;</mtext><mi mathvariant=\"normal\">m</mi></mrow><mo>&#x0002F;</mo><mi>&#x00073;</mi></mrow></mstyle></math> to the heavier block in the direction of the lighter block. The velocity of the centre of mass is<br/>(A) <math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mn>30</mn><mrow><mtext>&#x000A0;</mtext><mi mathvariant=\"normal\">m</mi></mrow><mo>&#x0002F;</mo><mi>&#x00073;</mi></mrow></mstyle></math><br/>(B) <math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mn>20</mn><mrow><mtext>&#x000A0;</mtext><mi mathvariant=\"normal\">m</mi></mrow><mo>&#x0002F;</mo><mi>&#x00073;</mi></mrow></mstyle></math><br/>(C) <math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mn>10</mn><mrow><mtext>&#x000A0;</mtext><mi mathvariant=\"normal\">m</mi></mrow><mo>&#x0002F;</mo><mi>&#x00073;</mi></mrow></mstyle></math><br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s<br/>(D) 15 m/s</h3>",
+      "question": "<h3>Two blocks of masses 10 kg and 4 kg are connected by a spring of negligible mass and placed on a frictionless horizontal surface. An impulse gives a velocity of <math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mn>14</mn><mrow><mtext>&#x000A0;</mtext><mi mathvariant=\"normal\">m</mi></mrow><mo>&#x0002F;</mo><mi>&#x00073;</mi></mrow></mstyle></math> to the heavier block in the direction of the lighter block. The velocity of the centre of mass is<br/>(A) <math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mn>30</mn><mrow><mtext>&#x000A0;</mtext><mi mathvariant=\"normal\">m</mi></mrow><mo>&#x0002F;</mo><mi>&#x00073;</mi></mrow></mstyle></math><br/>(B) <math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mn>20</mn><mrow><mtext>&#x000A0;</mtext><mi mathvariant=\"normal\">m</mi></mrow><mo>&#x0002F;</mo><mi>&#x00073;</mi></mrow></mstyle></math><br/>(C) <math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mn>10</mn><mrow><mtext>&#x000A0;</mtext><mi mathvariant=\"normal\">m</mi></mrow><mo>&#x0002F;</mo><mi>&#x00073;</mi></mrow></mstyle></math></h3>",
       "solution": "<h3><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mrow><msub><mi>v</mi><mrow><mrow><mi mathvariant=\"normal\">C</mi><mi mathvariant=\"normal\">M</mi></mrow></mrow></msub><mi>&</mi><mo>&#x0003D;</mo><mfrac><mrow><msub><mi>m</mi><mrow><mn>1</mn></mrow></msub><msub><mi>v</mi><mrow><mn>1</mn></mrow></msub><mo>&#x0002B;</mo><msub><mi>m</mi><mrow><mn>2</mn></mrow></msub><msub><mi>v</mi><mrow><mn>2</mn></mrow></msub></mrow><mrow><msub><mi>m</mi><mrow><mn>1</mn></mrow></msub><mo>&#x0002B;</mo><msub><mi>m</mi><mrow><mn>2</mn></mrow></msub></mrow></mfrac><mspace linebreak=\"newline\" /><mi>&</mi><mo>&#x0003D;</mo><mfrac><mrow><mn>10</mn><mi>&#x000D7;</mi><mn>14</mn><mo>&#x0002B;</mo><mn>4</mn><mi>&#x000D7;</mi><mn>0</mn></mrow><mrow><mn>10</mn><mo>&#x0002B;</mo><mn>4</mn></mrow></mfrac><mo>&#x0003D;</mo><mfrac><mrow><mn>140</mn></mrow><mrow><mn>14</mn></mrow></mfrac><mo>&#x0003D;</mo><mn>10</mn><mrow><mtext>&#x000A0;</mtext><mi mathvariant=\"normal\">m</mi></mrow><mo>&#x0002F;</mo><mi>&#x00073;</mi></mrow></mrow></mstyle></math></h3>",
       "answer": "C",
       "quesImages": [],
@@ -760,9 +766,9 @@
     "subConcept": null,
     "level": "EASY",
     "error": 1,
-    "updatedAt": "2026-11-11T02:46:10.945146+00:00",
+    "updatedAt": "2025-11-05T05:48:05.215Z",
     "scq": {
-      "question": "<h3>The half life period of a radioactive substance is 60 days. The time taken for 7/8 th of its original mass to disintegrate will be :<br/>(A) 120 days<br/>(B) 130 days<br/>(C) 180 days<br/>(D) 20 days</h3>",
+      "question": "<h3>The half life period of a radioactive substance is 60 days. The time taken for \\frac{7}{8} th of its original mass to disintegrate will be :<br/>(A) 120 days<br/>(B) 130 days<br/>(C) 180 days<br/>(D) 20 days</h3>",
       "solution": "<h3>7/8 disintegrates means 1/8 remains<br/><br/>Or <math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><msup><mrow><mo stretchy=\"true\" fence=\"true\" form=\"prefix\">&#x00028;</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mn>2</mn></mrow></mfrac><mo stretchy=\"true\" fence=\"true\" form=\"postfix\">&#x00029;</mo></mrow><mrow><mn>3</mn></mrow></msup></mrow></mstyle></math><br/><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mo>&#x02234;</mo><mn>3</mn></mrow></mstyle></math> half lives<br/><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"inline\"><mstyle displaystyle=\"true\"><mrow><mo>&#x0003D;</mo><mn>180</mn></mrow></mstyle></math> days</h3>",
       "answer": "C",
       "quesImages": [],
@@ -780,14 +786,12 @@
     "subConcept": "Motion of charge particle in electric field",
     "level": "MEDIUM",
     "error": 1,
-    "updatedAt": "2026-11-11T02:46:10.992620+00:00",
+    "updatedAt": "2026-01-30T08:01:51.964Z",
     "mcq": {
       "question": "<h3>Select the correct statement(s) from the following. The path of a charged particle moving with an initial velocity u</h3>\n\n<h3><math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mo stretchy=\"false\">(A)</mo></mrow></math> parallel to the uniform electrostatic field is a straight line.<br />\n<mspace linebreak=\"newline\"><math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mo stretchy=\"false\">(B)</mo></mrow></math> perpendicular to the uniform electrostatic field is a parabola.<br />\n<mspace linebreak=\"newline\"><math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mo stretchy=\"false\">(C)</mo></mrow></math> parallel to the uniform magnetic field is a helix with its axis parallel to the direction of<br />\n<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi> B </mi></mrow></math>.<br />\n<mspace linebreak=\"newline\"><math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mo stretchy=\"false\">(D)</mo></mrow></math> perpendicular to the uniform magnetic field is a circle in a plane normal to the field.</mspace></mspace></mspace></h3>\n<mspace linebreak=\"newline\"></mspace>",
       "solution": "<h3>conceptual Based of field force<br />\n<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>F</mi><mo>=</mo><mi>q</mi><mo>(</mo><mi>V</mi><mo>&times;</mo><mi>B</mi><mo>)</mo></math><br />\n<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>F</mi><mo>=</mo><mi>q</mi><mi>E</mi></math></h3>\n",
       "answer": [
-        "A",
-        "B",
-        "D"
+        "A, B, D"
       ],
       "quesImages": [],
       "solutionImages": []

@@ -5,7 +5,7 @@ The **17-year-old student preparing for JEE/NEET loses the most**, closely follo
 
 In high-stakes exams where 1 mark separates 5,000 ranks, a broken question doesn't just cost -1 in negative marking; it triggers a **5-mark swing** (+4 missed, -1 deducted). More dangerously, it erodes conceptual confidence: a student who mastered Gauss's Law or LCR resonance questions their own intellect when an erroneous key marks them wrong at 11:30 PM. 
 
-Simultaneously, **faculties lose cognitive stamina**: reviewing 60 unstructured, noisy reports late at night (*"ans galat hai"*, *"wrong"* ) causes decision fatigue and missed errors.
+Simultaneously, **faculties lose cognitive stamina**: reviewing dozens of unstructured, noisy reports (44 seeded benchmarks + live runtime submissions) late at night (*"ans galat hai"*, *"wrong"* ) causes decision fatigue and missed errors.
 
 **How our product design reflects this:**
 1. **Immediate AI Pre-Triage:** Newly reported doubts arrive pre-evaluated with mathematical derivation proofs, surgical diffs, and drafted pedagogical replies ready for 1-click faculty sign-off.

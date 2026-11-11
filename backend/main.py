@@ -8,8 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from datetime import datetime, timezone
 
-from .database import get_conn, init_db
-from .auth import create_token, store_session, get_current_user, remove_session
+from .database import get_conn, init_db, record_audit_event, verify_password, hash_password
+from .auth import create_token, store_session, get_current_user, remove_session, require_faculty_or_admin
 from .ai_copilot import normalize_speech_math, check_formula_sanity, synthesize_student_explanation, triage_student_doubt
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -34,10 +34,16 @@ if ENV_PATH.exists():
 
 app = FastAPI(title="Acadza AI Faculty & Student Assessment Platform", version="2.1.0")
 
-# Enable CORS for local dev and preview
+# Enable CORS for authorized web clients and preview deployments
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1|.*\.vercel\.app)(:[0-9]+)?",
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://acadza-liart.vercel.app",
+        "https://acadza.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -67,139 +73,108 @@ def apply_question_patch(question_id: str, edit: Optional[Dict[str, Any]]) -> Op
     - answer: updates answer key for SCQ, MCQ, or Integer question
     - question: updates question stem (e.g. adding missing unit '(in N)', repairing typos)
     - solution: updates derivation or removes stray MathML
-    - questionType: corrects question type (e.g. mcq -> scq)
-    Persists the updated question to questions.json and in-memory caches.
+    - questionType: corrects question type (e.g. mcq -> scq), migrating payload
+    Strictly idempotent: will not re-apply if already applied, and fails cleanly if find text is absent.
     """
     global QUESTIONS_DATA, QUESTIONS_MAP
     q = QUESTIONS_MAP.get(question_id)
     if not q:
         return None
 
-    if edit and isinstance(edit, dict):
-        field = edit.get("field")
-        find_val = edit.get("find")
-        replace_val = edit.get("replace")
+    if not edit or not isinstance(edit, dict):
+        return q
 
-        q_type = q.get("questionType", "scq")
-        target_payload = q.get(q_type)
-        if target_payload is None:
-            target_payload = {}
-            q[q_type] = target_payload
+    field = edit.get("field")
+    find_val = edit.get("find")
+    replace_val = edit.get("replace")
 
-        if field == "questionType":
-            q["questionType"] = replace_val
-        elif field == "answer":
-            if q_type == "mcq":
-                if isinstance(replace_val, list):
-                    target_payload["answer"] = replace_val
-                elif isinstance(replace_val, str) and replace_val.strip().startswith("["):
-                    try:
-                        import ast
-                        target_payload["answer"] = ast.literal_eval(replace_val)
-                    except Exception:
-                        target_payload["answer"] = [x.strip(" '\"") for x in replace_val.strip("[]").split(",") if x.strip()]
-                else:
-                    target_payload["answer"] = str(replace_val).strip()
-            elif q_type == "integerQuestion":
-                target_payload["answer"] = str(replace_val).strip()
+    q_type = q.get("questionType", "scq")
+    target_payload = q.get(q_type)
+    if target_payload is None:
+        target_payload = {}
+        q[q_type] = target_payload
+
+    if field == "questionType":
+        old_type = q.get("questionType", "mcq")
+        new_type = str(replace_val).strip()
+        if old_type in q and old_type != new_type:
+            payload = q.pop(old_type)
+            if new_type == "scq" and isinstance(payload.get("answer"), list):
+                ans_list = [x for x in payload["answer"] if x]
+                payload["answer"] = ans_list[0] if ans_list else "B"
+            q[new_type] = payload
+        elif new_type not in q:
+            q[new_type] = target_payload
+        q["questionType"] = new_type
+
+    elif field == "answer":
+        if q_type == "mcq":
+            if isinstance(replace_val, list):
+                target_payload["answer"] = replace_val
+            elif isinstance(replace_val, str) and replace_val.strip().startswith("["):
+                try:
+                    import ast
+                    target_payload["answer"] = ast.literal_eval(replace_val)
+                except Exception:
+                    target_payload["answer"] = [x.strip(" '\"") for x in replace_val.strip("[]").split(",") if x.strip()]
             else:
-                target_payload["answer"] = str(replace_val).strip()
-        elif field == "question":
-            current_q = target_payload.get("question", "")
-            if find_val and find_val in current_q:
-                target_payload["question"] = current_q.replace(find_val, replace_val)
-            elif find_val:
-                target_payload["question"] = current_q.replace(find_val.strip(), replace_val.strip())
-            else:
-                target_payload["question"] = current_q + f" {replace_val}"
-        elif field == "solution":
-            current_s = target_payload.get("solution", "")
-            if find_val and find_val in current_s:
-                target_payload["solution"] = current_s.replace(find_val, replace_val)
-            elif find_val:
-                target_payload["solution"] = current_s.replace(find_val.strip(), replace_val.strip())
-            else:
-                target_payload["solution"] = current_s + f" {replace_val}"
+                target_payload["answer"] = [str(replace_val).strip()]
+        else:
+            target_payload["answer"] = str(replace_val).strip()
 
-        q["updatedAt"] = datetime.now(timezone.utc).isoformat()
+    elif field == "question":
+        current_q = target_payload.get("question", "")
+        if not find_val:
+            return None
+        # Idempotence: if replace_val is already present, do not re-apply
+        if replace_val in current_q:
+            return q
+        if find_val in current_q:
+            target_payload["question"] = current_q.replace(find_val, replace_val)
+        elif find_val.strip() in current_q:
+            target_payload["question"] = current_q.replace(find_val.strip(), replace_val.strip())
+        else:
+            # find_val is not in question; do not append blindly!
+            print(f"Warning: patch find string not found in question {question_id}")
+            return None
 
-        # Persist to data/questions.json and console/src/data/questions.json
-        try:
-            with open(QUESTIONS_PATH, "w", encoding="utf-8") as f:
-                json.dump(QUESTIONS_DATA, f, indent=2, ensure_ascii=False)
-        except Exception as e:
-            print(f"Warning: could not write questions.json: {e}")
+    elif field == "solution":
+        current_s = target_payload.get("solution", "")
+        if not find_val:
+            return None
+        if replace_val in current_s:
+            return q
+        if find_val in current_s:
+            target_payload["solution"] = current_s.replace(find_val, replace_val)
+        elif find_val.strip() in current_s:
+            target_payload["solution"] = current_s.replace(find_val.strip(), replace_val.strip())
+        else:
+            print(f"Warning: patch find string not found in solution {question_id}")
+            return None
 
-        try:
-            console_path = BASE_DIR / "console" / "src" / "data" / "questions.json"
+    q["updatedAt"] = datetime.now(timezone.utc).isoformat()
+
+    # Persist safely, handling Vercel read-only filesystem gracefully
+    try:
+        with open(QUESTIONS_PATH, "w", encoding="utf-8") as f:
+            json.dump(QUESTIONS_DATA, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"Notice: question bank disk persist (read-only filesystem or Vercel): {e}")
+
+    try:
+        console_path = BASE_DIR / "console" / "src" / "data" / "questions.json"
+        if console_path.exists():
             with open(console_path, "w", encoding="utf-8") as f:
                 json.dump(QUESTIONS_DATA, f, indent=2, ensure_ascii=False)
-        except Exception as e:
-            print(f"Warning: could not write console questions.json: {e}")
+    except Exception as e:
+        pass
 
     return q
 
-# Ensure DB is initialized on startup and ensure columns exist
+# Ensure DB is initialized on startup cleanly without mutating question files or re-triaging
 @app.on_event("startup")
 def on_startup():
     init_db()
-    conn = get_conn()
-    cur = conn.cursor()
-    # Add faculty_name and resolved_at columns if not present
-    try:
-        cur.execute("ALTER TABLE reports ADD COLUMN faculty_name TEXT")
-    except Exception:
-        pass
-    try:
-        cur.execute("ALTER TABLE reports ADD COLUMN resolved_at TEXT")
-    except Exception:
-        pass
-
-    # Apply all approved fixes to questions bank so they are permanently reflected everywhere
-    try:
-        cur.execute("SELECT question_id, edit_json FROM reports WHERE status = 'auto_applied' AND edit_json IS NOT NULL")
-        applied_fixes = cur.fetchall()
-        for row in applied_fixes:
-            qid = row["question_id"]
-            if row["edit_json"]:
-                try:
-                    edit = json.loads(row["edit_json"])
-                    apply_question_patch(qid, edit)
-                except Exception as e:
-                    print("Error applying approved fix on startup:", e)
-    except Exception as e:
-        print("Startup patch application note:", e)
-
-    # Upgrade any previous un-triaged student doubts with AI Agent proof and surgical diffs
-    try:
-        cur.execute("SELECT report_id, question_id, comment FROM reports WHERE evidence LIKE 'Direct doubt%' OR edit_json IS NULL")
-        un_triaged = cur.fetchall()
-        for r in un_triaged:
-            qid = r["question_id"]
-            q_obj = QUESTIONS_MAP.get(qid)
-            if q_obj:
-                k_eval = RESULTS_BY_QID.get(qid)
-                t_res = triage_student_doubt(q_obj, r["comment"], k_eval)
-                edit_j = json.dumps(t_res["edit"]) if t_res.get("edit") else None
-                cur.execute("""
-                    UPDATE reports
-                    SET route = ?, verdict = ?, repair = ?, edit_json = ?, confidence = ?, evidence = ?, student_reply = ?
-                    WHERE report_id = ?
-                """, (
-                    t_res.get("route", "auto_apply"),
-                    t_res.get("verdict", "defect"),
-                    t_res.get("repair", "answer_key"),
-                    edit_j,
-                    t_res.get("confidence", 0.98),
-                    t_res.get("evidence"),
-                    t_res.get("student_reply"),
-                    r["report_id"]
-                ))
-    except Exception as e:
-        print("Triage upgrade note:", e)
-
-    conn.commit()
-    conn.close()
 
 # --- Request / Response Models ---
 class LoginRequest(BaseModel):
@@ -305,7 +280,7 @@ def login(req: LoginRequest):
     user_row = cur.fetchone()
     conn.close()
 
-    if not user_row or user_row["password_hash"] != req.password.strip():
+    if not user_row or not verify_password(req.password.strip(), user_row["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
     user_dict = {
@@ -316,6 +291,8 @@ def login(req: LoginRequest):
     }
     token = create_token(user_row["username"])
     store_session(token, user_dict)
+
+    record_audit_event("USER_LOGIN", user_row["username"], "user", user_row["username"], f"Signed in as {user_row['role']}")
 
     return {
         "success": True,
@@ -341,27 +318,57 @@ def logout(authorization: Optional[str] = Header(None)):
     return {"success": True}
 
 @app.get("/api/questions")
-def get_questions(subject: Optional[str] = None):
+def get_questions(
+    subject: Optional[str] = None,
+    authorization: Optional[str] = Header(None)
+):
+    token = authorization.replace("Bearer ", "").strip() if authorization else None
+    user = get_current_user(token) if token else None
+    is_privileged = user is not None and user.get("role") in ("professor", "admin")
+
     items = []
     for q in QUESTIONS_DATA:
         q_subj = q.get("subject", "Physics")
         if subject and q_subj.lower() != subject.lower():
             continue
         details = extract_question_details(q)
-        items.append({
-            "_id": q["_id"],
-            "subject": details["subject"],
-            "chapter": details["chapter"],
-            "level": details["level"],
-            "questionType": details["type"],
-            "questionText": details["questionText"],
-            "solutionText": details["solutionText"],
-            "correctAnswer": details["correctAnswer"],
-            "quesImages": details["quesImages"],
-            "solutionImages": details["solutionImages"],
-            "hasSolution": bool(details["solutionText"]),
-            details["type"]: q.get(details["type"], {})
-        })
+        q_type = details["type"]
+        raw_type_payload = q.get(q_type, {})
+
+        if is_privileged:
+            # Privileged view: full solutions and answer keys for faculty triage
+            items.append({
+                "_id": q["_id"],
+                "subject": details["subject"],
+                "chapter": details["chapter"],
+                "level": details["level"],
+                "questionType": q_type,
+                "questionText": details["questionText"],
+                "solutionText": details["solutionText"],
+                "correctAnswer": details["correctAnswer"],
+                "quesImages": details["quesImages"],
+                "solutionImages": details["solutionImages"],
+                "hasSolution": bool(details["solutionText"]),
+                q_type: raw_type_payload
+            })
+        else:
+            # Student exam view: strip answers, solutions, and internal keys before test submission
+            safe_payload = {
+                "question": raw_type_payload.get("question", details["questionText"]),
+                "quesImages": raw_type_payload.get("quesImages", details["quesImages"]),
+            }
+            items.append({
+                "_id": q["_id"],
+                "subject": details["subject"],
+                "chapter": details["chapter"],
+                "level": details["level"],
+                "questionType": q_type,
+                "questionText": details["questionText"],
+                "quesImages": details["quesImages"],
+                "hasSolution": False,
+                q_type: safe_payload
+            })
+
     return {"total": len(items), "questions": items}
 
 @app.post("/api/student/submit-test")
@@ -575,7 +582,7 @@ def get_student_doubts(studentId: Optional[str] = "student"):
     return {"count": len(doubts_list), "doubts": doubts_list}
 
 @app.post("/api/professor/reply")
-def reply_to_student(req: ProfessorReplyRequest):
+def reply_to_student(req: ProfessorReplyRequest, auth_user: dict = Depends(require_faculty_or_admin)):
     """
     Faculty responds back to the student explaining:
     1. If student was correct: "You were right, correction has been made!"
@@ -584,28 +591,39 @@ def reply_to_student(req: ProfessorReplyRequest):
     conn = get_conn()
     cur = conn.cursor()
 
+    # Subject access control
+    cur.execute("SELECT question_id, subject, edit_json FROM reports WHERE report_id = ?", (req.reportId,))
+    row = cur.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail=f"Report '{req.reportId}' not found")
+
+    rep_subject = row["subject"]
+    user_subject = auth_user.get("subject")
+    if auth_user.get("role") == "professor" and user_subject and user_subject.lower() != rep_subject.lower():
+        conn.close()
+        raise HTTPException(status_code=403, detail=f"Forbidden: You are assigned to {user_subject}, cannot modify {rep_subject} report")
+
     now_iso = datetime.now(timezone.utc).isoformat()
     new_status = "auto_applied" if req.verdict == "error_verified" else "reviewed"
     new_route = "auto_apply" if req.verdict == "error_verified" else "no_change"
+    faculty_display = auth_user.get("name") or req.facultyName or "Prof A"
 
     # If student is verified correct, automatically patch the question if an edit is found
     if req.verdict == "error_verified":
-        cur.execute("SELECT question_id, edit_json FROM reports WHERE report_id = ?", (req.reportId,))
-        row = cur.fetchone()
-        if row:
-            qid = row["question_id"]
-            edit = None
-            if row["edit_json"]:
-                try:
-                    edit = json.loads(row["edit_json"])
-                except Exception:
-                    pass
-            if not edit:
-                res = RESULTS_BY_QID.get(qid) or RESULTS_BY_RID.get(req.reportId)
-                if res and res.get("edit"):
-                    edit = res["edit"]
-            if edit:
-                apply_question_patch(qid, edit)
+        qid = row["question_id"]
+        edit = None
+        if row["edit_json"]:
+            try:
+                edit = json.loads(row["edit_json"])
+            except Exception:
+                pass
+        if not edit:
+            res = RESULTS_BY_QID.get(qid) or RESULTS_BY_RID.get(req.reportId)
+            if res and res.get("edit"):
+                edit = res["edit"]
+        if edit:
+            apply_question_patch(qid, edit)
 
     cur.execute("""
         UPDATE reports
@@ -616,10 +634,18 @@ def reply_to_student(req: ProfessorReplyRequest):
             faculty_name = ?,
             resolved_at = ?
         WHERE report_id = ?
-    """, (req.replyText.strip(), req.verdict, new_status, new_route, req.facultyName, now_iso, req.reportId))
+    """, (req.replyText.strip(), req.verdict, new_status, new_route, faculty_display, now_iso, req.reportId))
 
     conn.commit()
     conn.close()
+
+    record_audit_event(
+        action="reply_to_student",
+        actor=auth_user.get("username", faculty_display),
+        target_type="report",
+        target_id=req.reportId,
+        details={"verdict": req.verdict, "status": new_status, "reply": req.replyText.strip()[:120]}
+    )
 
     return {
         "success": True,
@@ -631,14 +657,19 @@ def reply_to_student(req: ProfessorReplyRequest):
     }
 
 @app.get("/api/professor/reports")
-def get_professor_reports(subject: Optional[str] = None):
+def get_professor_reports(subject: Optional[str] = None, auth_user: dict = Depends(require_faculty_or_admin)):
     conn = get_conn()
     cur = conn.cursor()
 
-    if subject and subject.strip() and subject.lower() != "all":
+    effective_subject = subject
+    # If authenticated user is a professor tied to a specific subject, enforce that subject
+    if auth_user.get("role") == "professor" and auth_user.get("subject"):
+        effective_subject = auth_user["subject"]
+
+    if effective_subject and effective_subject.strip() and effective_subject.lower() != "all":
         cur.execute("""
             SELECT * FROM reports WHERE LOWER(subject) = LOWER(?) ORDER BY reported_at DESC
-        """, (subject.strip(),))
+        """, (effective_subject.strip(),))
     else:
         cur.execute("SELECT * FROM reports ORDER BY reported_at DESC")
 
@@ -674,15 +705,28 @@ def get_professor_reports(subject: Optional[str] = None):
         })
 
     return {
-        "subjectFilter": subject or "All Subjects",
+        "subjectFilter": effective_subject or "All Subjects",
         "count": len(reports_list),
         "reports": reports_list
     }
 
 @app.post("/api/professor/action")
-def professor_action(req: ProfessorActionRequest):
+def professor_action(req: ProfessorActionRequest, auth_user: dict = Depends(require_faculty_or_admin)):
     conn = get_conn()
     cur = conn.cursor()
+
+    # Subject access control
+    cur.execute("SELECT question_id, subject, edit_json FROM reports WHERE report_id = ?", (req.reportId,))
+    row = cur.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail=f"Report '{req.reportId}' not found")
+
+    rep_subject = row["subject"]
+    user_subject = auth_user.get("subject")
+    if auth_user.get("role") == "professor" and user_subject and user_subject.lower() != rep_subject.lower():
+        conn.close()
+        raise HTTPException(status_code=403, detail=f"Forbidden: You are assigned to {user_subject}, cannot modify {rep_subject} report")
 
     new_status = "auto_applied" if req.action == "approve" else "dismissed" if req.action == "reject" else "reviewed"
     new_route = "auto_apply" if req.action == "approve" else "no_change" if req.action == "reject" else "faculty_review"
@@ -690,22 +734,19 @@ def professor_action(req: ProfessorActionRequest):
 
     # If approving, also trigger question patch if an edit is present
     if req.action == "approve":
-        cur.execute("SELECT question_id, edit_json FROM reports WHERE report_id = ?", (req.reportId,))
-        row = cur.fetchone()
-        if row:
-            qid = row["question_id"]
-            edit = None
-            if row["edit_json"]:
-                try:
-                    edit = json.loads(row["edit_json"])
-                except Exception:
-                    pass
-            if not edit:
-                res = RESULTS_BY_QID.get(qid) or RESULTS_BY_RID.get(req.reportId)
-                if res and res.get("edit"):
-                    edit = res["edit"]
-            if edit:
-                apply_question_patch(qid, edit)
+        qid = row["question_id"]
+        edit = None
+        if row["edit_json"]:
+            try:
+                edit = json.loads(row["edit_json"])
+            except Exception:
+                pass
+        if not edit:
+            res = RESULTS_BY_QID.get(qid) or RESULTS_BY_RID.get(req.reportId)
+            if res and res.get("edit"):
+                edit = res["edit"]
+        if edit:
+            apply_question_patch(qid, edit)
 
     cur.execute("""
         UPDATE reports
@@ -716,10 +757,18 @@ def professor_action(req: ProfessorActionRequest):
     conn.commit()
     conn.close()
 
+    record_audit_event(
+        action=f"professor_{req.action}",
+        actor=auth_user.get("username", "faculty"),
+        target_type="report",
+        target_id=req.reportId,
+        details={"action": req.action, "new_status": new_status, "new_route": new_route}
+    )
+
     return {"success": True, "reportId": req.reportId, "newStatus": new_status, "newRoute": new_route}
 
 @app.post("/api/professor/approve-fix")
-def approve_fix(req: ApproveFixRequest):
+def approve_fix(req: ApproveFixRequest, auth_user: dict = Depends(require_faculty_or_admin)):
     """
     Faculty reviews and approves a fix for a question:
     - If answer marked as correct is wrong: updates answer key.
@@ -727,6 +776,20 @@ def approve_fix(req: ApproveFixRequest):
     - Persists updated question to question bank and updates report status to auto_applied.
     - Removes report from active review queue.
     """
+    conn = get_conn()
+    cur = conn.cursor()
+
+    # Access control: check subject
+    if req.reportId:
+        cur.execute("SELECT question_id, subject FROM reports WHERE report_id = ?", (req.reportId,))
+        row = cur.fetchone()
+        if row:
+            rep_subject = row["subject"]
+            user_subject = auth_user.get("subject")
+            if auth_user.get("role") == "professor" and user_subject and user_subject.lower() != rep_subject.lower():
+                conn.close()
+                raise HTTPException(status_code=403, detail=f"Forbidden: You are assigned to {user_subject}, cannot modify {rep_subject} report")
+
     edit_to_apply = req.edit
     if not edit_to_apply:
         res = RESULTS_BY_QID.get(req.questionId) or (RESULTS_BY_RID.get(req.reportId) if req.reportId else None)
@@ -736,33 +799,53 @@ def approve_fix(req: ApproveFixRequest):
     # 1. Apply surgical patch to question in memory and questions.json
     updated_q = apply_question_patch(req.questionId, edit_to_apply)
     if not updated_q:
+        conn.close()
         raise HTTPException(status_code=404, detail=f"Question '{req.questionId}' not found in question bank")
 
-    # 2. Update SQLite reports table
-    conn = get_conn()
-    cur = conn.cursor()
+    # 2. Update SQLite reports table surgically for target report only
     now_iso = datetime.now(timezone.utc).isoformat()
-    faculty_display = req.facultyName or "Faculty Lead"
+    faculty_display = auth_user.get("name") or req.facultyName or "Prof A"
     reply_msg = (
         f"Correction confirmed! {faculty_display} reviewed your feedback and approved the fix. "
         "The question and answer key have been updated in our question bank."
     )
     edit_str = json.dumps(edit_to_apply) if edit_to_apply else None
 
-    cur.execute("""
-        UPDATE reports
-        SET status = 'auto_applied',
-            route = 'auto_apply',
-            verdict = 'error_verified',
-            faculty_name = ?,
-            resolved_at = ?,
-            student_reply = ?,
-            edit_json = COALESCE(?, edit_json)
-        WHERE question_id = ? OR (report_id IS NOT NULL AND report_id = ?)
-    """, (faculty_display, now_iso, reply_msg, edit_str, req.questionId, req.reportId or ""))
+    if req.reportId:
+        cur.execute("""
+            UPDATE reports
+            SET status = 'auto_applied',
+                route = 'auto_apply',
+                verdict = 'error_verified',
+                faculty_name = ?,
+                resolved_at = ?,
+                student_reply = ?,
+                edit_json = COALESCE(?, edit_json)
+            WHERE report_id = ?
+        """, (faculty_display, now_iso, reply_msg, edit_str, req.reportId))
+    else:
+        cur.execute("""
+            UPDATE reports
+            SET status = 'auto_applied',
+                route = 'auto_apply',
+                verdict = 'error_verified',
+                faculty_name = ?,
+                resolved_at = ?,
+                student_reply = ?,
+                edit_json = COALESCE(?, edit_json)
+            WHERE question_id = ?
+        """, (faculty_display, now_iso, reply_msg, edit_str, req.questionId))
 
     conn.commit()
     conn.close()
+
+    record_audit_event(
+        action="approve_fix",
+        actor=auth_user.get("username", faculty_display),
+        target_type="report" if req.reportId else "question",
+        target_id=req.reportId or req.questionId,
+        details={"question_id": req.questionId, "edit": edit_to_apply}
+    )
 
     return {
         "success": True,
@@ -774,32 +857,63 @@ def approve_fix(req: ApproveFixRequest):
     }
 
 @app.post("/api/professor/reject-report")
-def reject_report(req: RejectReportRequest):
+def reject_report(req: RejectReportRequest, auth_user: dict = Depends(require_faculty_or_admin)):
     """
     Faculty rejects/dismisses report after confirming the question is sound.
     """
     conn = get_conn()
     cur = conn.cursor()
+
+    if req.reportId:
+        cur.execute("SELECT question_id, subject FROM reports WHERE report_id = ?", (req.reportId,))
+        row = cur.fetchone()
+        if row:
+            rep_subject = row["subject"]
+            user_subject = auth_user.get("subject")
+            if auth_user.get("role") == "professor" and user_subject and user_subject.lower() != rep_subject.lower():
+                conn.close()
+                raise HTTPException(status_code=403, detail=f"Forbidden: You are assigned to {user_subject}, cannot modify {rep_subject} report")
+
     now_iso = datetime.now(timezone.utc).isoformat()
-    faculty_display = req.facultyName or "Faculty Lead"
+    faculty_display = auth_user.get("name") or req.facultyName or "Prof A"
     reply_msg = (
         f"Thank you for your feedback. {faculty_display} checked the question formulation and official derivation. "
         f"The question is sound and verified correct. Note: {req.reason or 'No defect found.'}"
     )
 
-    cur.execute("""
-        UPDATE reports
-        SET status = 'dismissed',
-            route = 'no_change',
-            verdict = 'concept_sound',
-            faculty_name = ?,
-            resolved_at = ?,
-            student_reply = ?
-        WHERE question_id = ? OR (report_id IS NOT NULL AND report_id = ?)
-    """, (faculty_display, now_iso, reply_msg, req.questionId, req.reportId or ""))
+    if req.reportId:
+        cur.execute("""
+            UPDATE reports
+            SET status = 'dismissed',
+                route = 'no_change',
+                verdict = 'concept_sound',
+                faculty_name = ?,
+                resolved_at = ?,
+                student_reply = ?
+            WHERE report_id = ?
+        """, (faculty_display, now_iso, reply_msg, req.reportId))
+    else:
+        cur.execute("""
+            UPDATE reports
+            SET status = 'dismissed',
+                route = 'no_change',
+                verdict = 'concept_sound',
+                faculty_name = ?,
+                resolved_at = ?,
+                student_reply = ?
+            WHERE question_id = ?
+        """, (faculty_display, now_iso, reply_msg, req.questionId))
 
     conn.commit()
     conn.close()
+
+    record_audit_event(
+        action="reject_report",
+        actor=auth_user.get("username", faculty_display),
+        target_type="report" if req.reportId else "question",
+        target_id=req.reportId or req.questionId,
+        details={"question_id": req.questionId, "reason": req.reason}
+    )
 
     return {
         "success": True,
@@ -809,7 +923,7 @@ def reject_report(req: RejectReportRequest):
     }
 
 @app.post("/api/professor/ai-assist")
-def ai_assist(req: AIAssistRequest):
+def ai_assist(req: AIAssistRequest, auth_user: dict = Depends(require_faculty_or_admin)):
     """
     AI Co-Pilot for Faculty:
     1. Analyzes voice or text input containing formulas/derivations.
@@ -821,6 +935,11 @@ def ai_assist(req: AIAssistRequest):
     q = QUESTIONS_MAP.get(req.questionId)
     if not q:
         raise HTTPException(status_code=404, detail="Question not found")
+
+    q_subject = q.get("subject", "Physics")
+    user_subject = auth_user.get("subject")
+    if auth_user.get("role") == "professor" and user_subject and user_subject.lower() != q_subject.lower():
+        raise HTTPException(status_code=403, detail=f"Forbidden: You are assigned to {user_subject}, cannot assist on {q_subject} question")
 
     sanity = check_formula_sanity(q, req.facultyInput)
     synthesis = synthesize_student_explanation(q, req.facultyInput, sanity, req.studentDoubt)
@@ -837,7 +956,7 @@ def ai_assist(req: AIAssistRequest):
     }
 
 @app.post("/api/professor/update-question-solution")
-def update_question_solution(req: UpdateQuestionSolutionRequest):
+def update_question_solution(req: UpdateQuestionSolutionRequest, auth_user: dict = Depends(require_faculty_or_admin)):
     """
     Updates the stored official solution and/or answer key directly in the database,
     making changes in questions.json and updating corresponding student reports.
@@ -846,6 +965,12 @@ def update_question_solution(req: UpdateQuestionSolutionRequest):
     q = QUESTIONS_MAP.get(req.questionId)
     if not q:
         raise HTTPException(status_code=404, detail="Question not found")
+
+    # Access control: check question subject
+    q_subject = q.get("subject", "Physics")
+    user_subject = auth_user.get("subject")
+    if auth_user.get("role") == "professor" and user_subject and user_subject.lower() != q_subject.lower():
+        raise HTTPException(status_code=403, detail=f"Forbidden: You are assigned to {user_subject}, cannot modify {q_subject} question")
 
     q_type = q.get("questionType", "scq")
     target_payload = q.get(q_type)
@@ -881,25 +1006,45 @@ def update_question_solution(req: UpdateQuestionSolutionRequest):
     conn = get_conn()
     cur = conn.cursor()
     now_iso = datetime.now(timezone.utc).isoformat()
-    faculty_display = req.facultyName or "Faculty Lead"
+    faculty_display = auth_user.get("name") or req.facultyName or "Prof A"
     reply_msg = (
         f"Correction confirmed! {faculty_display} updated the official solution and approach in our question bank. "
         "The derivation has been revised."
     )
 
-    cur.execute("""
-        UPDATE reports
-        SET status = 'auto_applied',
-            route = 'auto_apply',
-            verdict = 'error_verified',
-            faculty_name = ?,
-            resolved_at = ?,
-            student_reply = ?
-        WHERE question_id = ? OR (report_id IS NOT NULL AND report_id = ?)
-    """, (faculty_display, now_iso, reply_msg, req.questionId, req.reportId or ""))
+    if req.reportId:
+        cur.execute("""
+            UPDATE reports
+            SET status = 'auto_applied',
+                route = 'auto_apply',
+                verdict = 'error_verified',
+                faculty_name = ?,
+                resolved_at = ?,
+                student_reply = ?
+            WHERE report_id = ?
+        """, (faculty_display, now_iso, reply_msg, req.reportId))
+    else:
+        cur.execute("""
+            UPDATE reports
+            SET status = 'auto_applied',
+                route = 'auto_apply',
+                verdict = 'error_verified',
+                faculty_name = ?,
+                resolved_at = ?,
+                student_reply = ?
+            WHERE question_id = ?
+        """, (faculty_display, now_iso, reply_msg, req.questionId))
 
     conn.commit()
     conn.close()
+
+    record_audit_event(
+        action="update_question_solution",
+        actor=auth_user.get("username", faculty_display),
+        target_type="question",
+        target_id=req.questionId,
+        details={"report_id": req.reportId, "answer_key": req.answerKey}
+    )
 
     return {
         "success": True,
@@ -909,14 +1054,18 @@ def update_question_solution(req: UpdateQuestionSolutionRequest):
     }
 
 @app.get("/api/professor/stats")
-def get_professor_stats(subject: Optional[str] = None):
+def get_professor_stats(subject: Optional[str] = None, auth_user: dict = Depends(require_faculty_or_admin)):
     conn = get_conn()
     cur = conn.cursor()
 
-    if subject and subject.strip() and subject.lower() != "all":
+    effective_subject = subject
+    if auth_user.get("role") == "professor" and auth_user.get("subject"):
+        effective_subject = auth_user["subject"]
+
+    if effective_subject and effective_subject.strip() and effective_subject.lower() != "all":
         cur.execute("""
             SELECT status, count(*) FROM reports WHERE LOWER(subject) = LOWER(?) GROUP BY status
-        """, (subject.strip(),))
+        """, (effective_subject.strip(),))
     else:
         cur.execute("SELECT status, count(*) FROM reports GROUP BY status")
 
@@ -930,3 +1079,29 @@ def get_professor_stats(subject: Optional[str] = None):
         "dismissed": counts.get("dismissed", 0),
         "total": sum(counts.values())
     }
+
+@app.get("/api/audit-log")
+def get_audit_log(limit: int = 100, auth_user: dict = Depends(require_faculty_or_admin)):
+    """
+    Returns the immutable audit log of all system and faculty actions.
+    Restricted to authenticated faculty and administrators.
+    """
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM audit_log ORDER BY id DESC LIMIT ?", (limit,))
+    rows = cur.fetchall()
+    conn.close()
+    return {"count": len(rows), "logs": [dict(r) for r in rows]}
+
+@app.get("/api/subjects")
+def get_all_subjects(auth_user: dict = Depends(require_faculty_or_admin)):
+    """
+    Returns all distinct subjects available in the platform.
+    Used by the Dean of Academics to segment and filter reports and faculty workload.
+    """
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT DISTINCT subject FROM reports ORDER BY subject ASC")
+    rows = [r[0] for r in cur.fetchall() if r[0]]
+    conn.close()
+    return {"subjects": rows}

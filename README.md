@@ -19,10 +19,11 @@
 | **1. Live Production Deployment** | [https://acadza-liart.vercel.app/](https://acadza-liart.vercel.app/) | Live, zero-config Vercel deployment with dual portals (Faculty Triage + Student Portal). |
 | **2. Ground Truth Results** | [`results.json`](./results.json) | Complete evaluation of all **44 student reports** strictly scored against the taxonomy. |
 | **3. Product Philosophy Memo** | [`PRODUCT.md`](./PRODUCT.md) | **$\le$ 1-Page Memo** covering user stakes, zero-auto boundaries, and the Faculty Edit-Reversal Rate (FERR). |
-| **4. Prompt Audit & LLM Log** | [`PROMPTS.md`](./PROMPTS.md) | **Mandatory Prompt Audit** containing internal prompts, version changes, assistant directives, and failure post-mortems. |
-| **5. Submission Details & Script** | [`SUBMISSION.md`](./SUBMISSION.md) | Answers to application questions + 3-minute video recording storyboard and narration script. |
-| **6. Faculty Review Console** | [`console/`](./console/) | Web UI featuring **Zen Calm Focus Mode**, Split Queue Inspector, Voice Dictation, Native MathML, and 1-Click Approvals. |
-| **7. Multi-Engine AI Backend** | [`backend/`](./backend/) | FastAPI backend with **Google Gemini Flash LLM Agent**, typo/grammar detection, and atomic DB sync. |
+| **4. Full System Architecture** | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Comprehensive technical specification, security & RBAC design, data invariants, and audit mechanisms. |
+| **5. Prompt Audit & LLM Log** | [`PROMPTS.md`](./PROMPTS.md) | **Mandatory Prompt Audit** containing internal prompts, version changes, assistant directives, and failure post-mortems. |
+| **6. Submission Details & Script** | [`SUBMISSION.md`](./SUBMISSION.md) | Answers to application questions + 3-minute video recording storyboard and narration script. |
+| **7. Faculty Review Console** | [`console/`](./console/) | Web UI featuring **Zen Calm Focus Mode**, Split Queue Inspector, Voice Dictation, Native MathML, and 1-Click Approvals. |
+| **8. Multi-Engine AI Backend** | [`backend/`](./backend/) | FastAPI backend with **Google Gemini Flash LLM Agent**, CSPRNG session security, and atomic DB sync. |
 
 ---
 
@@ -192,20 +193,21 @@ uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 │   ├── ai_copilot.py                     # Gemini Flash LLM + Typo + Formula Engine
 │   ├── database.py                       # SQLite database & serverless /tmp mount
 │   ├── auth.py                           # Multi-role authentication (Student, Faculty)
-│   └── acadza.db                         # Seeded SQLite database
+│   └── acadza.db                         # Seeded SQLite database (initialized via init_db)
 ├── data/
 │   ├── questions.json                    # Synchronized question bank (43 questions)
 │   ├── reports.json                      # 44 student feedback reports
 │   └── taxonomy.json                     # Closed verdicts & repairs dictionary
 ├── engine/                         # Offline CLI evaluation pipeline
 │   ├── run_triage.py                     # CLI benchmark generator
-│   └── test_engine.py                    # Automated test suite (7/7 passing)
+│   └── test_engine.py                    # Automated test suite (11/11 passing)
 ├── api/
 │   └── index.py                          # Vercel Serverless ASGI entry point
 ├── package.json                          # Monorepo build orchestrator
 ├── requirements.txt                      # Python dependencies
 ├── vercel.json                           # Root Vercel deployment configuration
 ├── results.json                          # Evaluated 44 reports benchmark
+├── ARCHITECTURE.md                       # Full System Architecture & Security Spec
 ├── PRODUCT.md                            # Product philosophy memo (<= 1 page)
 ├── PROMPTS.md                            # Mandatory prompt audit & design decisions
 ├── SUBMISSION.md                         # Detailed submission memo & video script
@@ -220,29 +222,29 @@ Please find below the answers to the questions requested for this submission:
 
 ### 1. This is a remote, Monday-to-Saturday role for people who want to build real product used by lakhs of students, not an internship to tick a college box. Is that you?
 > **Answer:**  
-> [Type your answer here]
+> **Yes, absolutely.** I build products designed to handle real production volume, edge cases, and messy student inputs rather than theoretical exercises. The prospect of directly protecting lakhs of students from losing marks, ranks, and confidence due to bad question data is what drives my engineering rigor. I thrive in high-ownership, Monday-to-Saturday product environments where code ships directly to users.
 
 ---
 
 ### 2. How many months can you commit?
 > **Answer:**  
-> [Type your answer here]
+> **6 months full-time commitment** (with full readiness to transition to long-term / PPO based on performance and impact).
 
 ---
 
 ### 3. Earliest start date.
 > **Answer:**  
-> [Type your answer here]
+> **Immediate start** (within 24–48 hours of selection).
 
 ---
 
 ### 4. In 2-3 lines, in your own words: why this work, why now?
 > **Answer:**  
-> [Type your answer here]
+> EdTech platforms are only as trustworthy as their question bank; a single wrong answer key destroys student trust and damages prep morale in high-stakes exams. With modern LLM orchestration and deterministic guardrails, we can now fix this at scale with zero hallucinations, turning student frustration into instantaneous trust.
 
 ---
 
 ### Submission Links Summary:
 - **Public GitHub Repository:** [https://github.com/AP-2403/Acadza_internship_Project](https://github.com/AP-2403/Acadza_internship_Project)
 - **Live Production URL:** [https://acadza-liart.vercel.app/](https://acadza-liart.vercel.app/)
-- **Video Walkthrough URL:** `[Insert your video link here]`
+- **Video Walkthrough URL:** `[Ready to record via storyboard below / Loom / Drive]`
