@@ -58,8 +58,10 @@ export const InteractiveDemoTour: React.FC = () => {
     if (isCompletedModalOpen && !isMuted) {
       try {
         const audio = new Audio('/audio/thank-you.m4a');
+        audio.volume = 1.0;
         audio.play().catch(() => {
           const fallback = new Audio('/audio/thank-you.mp3');
+          fallback.volume = 1.0;
           fallback.play().catch(() => {});
         });
       } catch (e) {

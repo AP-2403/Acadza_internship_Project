@@ -270,6 +270,7 @@ export const DemoTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const audio = new Audio();
     audio.src = step.audioFile;
     audio.muted = isMuted;
+    audio.volume = 1.0;
     audioRef.current = audio;
 
     audio.addEventListener('playing', () => {
