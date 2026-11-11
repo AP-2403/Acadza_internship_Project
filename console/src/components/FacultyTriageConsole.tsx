@@ -229,13 +229,15 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
     if (!isTourActive) return;
 
     if (currentStepIndex === 3) {
-      // Step 4: Arrived in queue
+      // Step 4: Arrived in Physics Queue -> Must show Queue Sidebar in split mode!
       setActiveTab('triage');
-      if (groups.length > 0 && !selectedGroupId) {
+      setViewMode('split');
+      setShowFocusCopilot(false);
+      if (groups.length > 0) {
         setSelectedGroupId(groups[0].questionId);
       }
     } else if (currentStepIndex === 4) {
-      // Step 5: Zen Focus View
+      // Step 5: Zen Focus View -> Switch to clean Focus View
       setActiveTab('triage');
       setViewMode('focus');
       setShowFocusCopilot(false);
@@ -247,11 +249,14 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
       // Step 8: Pedagogical Reply Synthesis & 1-Click Approval
       setActiveTab('triage');
       setShowFocusCopilot(false);
+      setViewMode('focus');
     } else if (currentStepIndex === 8) {
       // Step 9: Dean Multi-Department
       setActiveTab('triage');
+      setViewMode('split');
+      setShowFocusCopilot(false);
     }
-  }, [isTourActive, currentStepIndex, groups, selectedGroupId]);
+  }, [isTourActive, currentStepIndex, groups]);
 
   const currentGroup = useMemo(() => {
     return groups.find((g) => g.questionId === selectedGroupId) || groups[0] || null;

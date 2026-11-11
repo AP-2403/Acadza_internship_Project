@@ -7,7 +7,6 @@ import {
   ChevronRight, 
   ChevronLeft, 
   X, 
-  MoveHorizontal, 
   Zap, 
   Terminal,
   Compass
@@ -63,7 +62,6 @@ export const InteractiveDemoTour: React.FC = () => {
 
     if (el) {
       try {
-        // Use nearest so we don't aggressively push the element off
         el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
       } catch (e) {
         // Ignore scroll errors
@@ -81,19 +79,8 @@ export const InteractiveDemoTour: React.FC = () => {
       };
       setTargetRect(rect);
     } else {
-      // Fallback: center spotlight
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      const w = Math.min(500, vw * 0.75);
-      const h = Math.min(260, vh * 0.4);
-      setTargetRect({
-        top: (vh - h) / 2,
-        left: (vw - w) / 2,
-        width: w,
-        height: h,
-        right: (vw + w) / 2,
-        bottom: (vh + h) / 2
-      });
+      // Do NOT invent a fake cut-out hole! Set to null so clean backdrop is used
+      setTargetRect(null);
     }
   }, [isActive, currentStep]);
 
@@ -115,12 +102,10 @@ export const InteractiveDemoTour: React.FC = () => {
 
   // Compute smart non-overlapping position
   const computePosition = useCallback(() => {
-    if (!targetRect) return;
-
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const cardEl = cardRef.current;
-    const cardWidth = cardEl ? cardEl.offsetWidth : 390;
+    const cardWidth = cardEl ? cardEl.offsetWidth : 380;
     const cardHeight = cardEl ? cardEl.offsetHeight : 340;
     const margin = 16;
 
@@ -139,6 +124,12 @@ export const InteractiveDemoTour: React.FC = () => {
     }
     if (cornerMode === 'top-left') {
       setCardPos({ top: margin, left: margin });
+      return;
+    }
+
+    // When targetRect is not found, dock neatly in top-right or center
+    if (!targetRect) {
+      setCardPos({ top: margin + 40, left: vw - cardWidth - margin - 20 });
       return;
     }
 
@@ -171,9 +162,8 @@ export const InteractiveDemoTour: React.FC = () => {
       finalTop = targetRect.top - cardHeight - 12;
       finalLeft = Math.max(margin, Math.min(targetRect.left + (targetRect.width - cardWidth) / 2, vw - cardWidth - margin));
     }
-    // Priority 5: Dock at top-right or bottom-right corner if target is massive
+    // Priority 5: Dock at corner with least overlap
     else {
-      // Pick corner with least overlap
       if (spaceRight >= spaceLeft) {
         finalLeft = vw - cardWidth - margin;
       } else {
@@ -225,12 +215,12 @@ export const InteractiveDemoTour: React.FC = () => {
   return (
     <div className="fixed inset-0 z-50 pointer-events-none select-none font-sans">
       
-      {/* 4-Quadrant Spotlight Curtain */}
-      {targetRect && (
+      {/* 4-Quadrant Spotlight Curtain or Full Dim Backdrop */}
+      {targetRect ? (
         <>
           {/* Top Curtain */}
           <div
-            className="fixed bg-slate-950/60 backdrop-blur-[2px] transition-all duration-200 pointer-events-auto"
+            className="fixed bg-slate-950/60 transition-all duration-200 pointer-events-auto z-[9990]"
             style={{
               top: 0,
               left: 0,
@@ -241,7 +231,7 @@ export const InteractiveDemoTour: React.FC = () => {
 
           {/* Bottom Curtain */}
           <div
-            className="fixed bg-slate-950/60 backdrop-blur-[2px] transition-all duration-200 pointer-events-auto"
+            className="fixed bg-slate-950/60 transition-all duration-200 pointer-events-auto z-[9990]"
             style={{
               top: targetRect.bottom,
               left: 0,
@@ -252,7 +242,7 @@ export const InteractiveDemoTour: React.FC = () => {
 
           {/* Left Curtain */}
           <div
-            className="fixed bg-slate-950/60 backdrop-blur-[2px] transition-all duration-200 pointer-events-auto"
+            className="fixed bg-slate-950/60 transition-all duration-200 pointer-events-auto z-[9990]"
             style={{
               top: targetRect.top,
               left: 0,
@@ -263,7 +253,7 @@ export const InteractiveDemoTour: React.FC = () => {
 
           {/* Right Curtain */}
           <div
-            className="fixed bg-slate-950/60 backdrop-blur-[2px] transition-all duration-200 pointer-events-auto"
+            className="fixed bg-slate-950/60 transition-all duration-200 pointer-events-auto z-[9990]"
             style={{
               top: targetRect.top,
               left: targetRect.right,
@@ -274,7 +264,7 @@ export const InteractiveDemoTour: React.FC = () => {
 
           {/* Target Element Glowing Ring & Spotlight Frame */}
           <div
-            className="fixed rounded-xl pointer-events-none transition-all duration-200 ring-4 ring-blue-500/70 shadow-[0_0_30px_rgba(59,130,246,0.55)] animate-pulse"
+            className="fixed rounded-xl pointer-events-none transition-all duration-200 ring-4 ring-blue-500/70 shadow-[0_0_30px_rgba(59,130,246,0.55)] animate-pulse z-[9992]"
             style={{
               top: targetRect.top,
               left: targetRect.left,
@@ -289,12 +279,14 @@ export const InteractiveDemoTour: React.FC = () => {
             </div>
           </div>
         </>
+      ) : (
+        <div className="fixed inset-0 bg-slate-950/40 pointer-events-auto z-[9990]" />
       )}
 
-      {/* Smart Docked Tour Card (Strictly Screen-Clamped & Non-Obstructive) */}
+      {/* Solid Opaque Tour Card (Strictly Screen-Clamped, Never Hidden or Darkened) */}
       <div
         ref={cardRef}
-        className="fixed w-[380px] max-w-[calc(100vw-24px)] max-h-[calc(100vh-28px)] bg-white/98 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-2xl p-4 text-slate-800 pointer-events-auto transition-all duration-200 flex flex-col z-50 ring-1 ring-slate-900/10"
+        className="fixed w-[380px] max-w-[calc(100vw-24px)] max-h-[calc(100vh-28px)] bg-white border border-slate-300 rounded-2xl shadow-2xl p-4 text-slate-800 pointer-events-auto transition-all duration-200 flex flex-col z-[9999] ring-1 ring-slate-900/10"
         style={{
           top: cardPos.top,
           left: cardPos.left
@@ -308,14 +300,14 @@ export const InteractiveDemoTour: React.FC = () => {
             </span>
             <div>
               <div className="flex items-center gap-1.5">
-                <h4 className="font-extrabold text-xs text-slate-900 leading-tight">
+                <h4 className="font-black text-xs text-slate-900 leading-tight">
                   {currentStep.speaker}
                 </h4>
                 <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full border uppercase tracking-wider ${roleBadgeStyle.bg}`}>
                   {currentStep.speakerRole}
                 </span>
               </div>
-              <p className="text-[10px] text-slate-500 font-semibold">
+              <p className="text-[11px] text-slate-700 font-bold mt-0.5">
                 Step {currentStep.step} of {totalSteps}: {currentStep.title}
               </p>
             </div>
@@ -383,14 +375,14 @@ export const InteractiveDemoTour: React.FC = () => {
             />
           </div>
 
-          <div className="flex items-center justify-between px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/80 text-[10px]">
+          <div className="flex items-center justify-between px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-[10px]">
             <div className="flex items-center gap-1.5">
               <div className="flex items-center gap-0.5 h-3">
                 {[6, 12, 16, 10, 14, 18, 8].map((h, i) => (
                   <div
                     key={i}
                     className={`w-0.5 rounded-full transition-all duration-150 ${
-                      isSpeaking && !isMuted ? 'bg-blue-600 animate-pulse' : 'bg-slate-300'
+                      isSpeaking && !isMuted ? 'bg-blue-600 animate-pulse' : 'bg-slate-400'
                     }`}
                     style={{
                       height: isSpeaking && !isMuted ? `${h}px` : '3px',
@@ -399,42 +391,42 @@ export const InteractiveDemoTour: React.FC = () => {
                   />
                 ))}
               </div>
-              <span className="font-bold text-slate-700">
+              <span className="font-bold text-slate-800">
                 {isSpeaking ? (isMuted ? 'Narration Muted' : 'Speaking Voiceover...') : 'Voice Ready'}
               </span>
             </div>
 
-            <span className="font-mono font-semibold text-slate-400 text-[9px]">
+            <span className="font-mono font-bold text-slate-600 text-[9px]">
               {Math.round(audioProgress)}%
             </span>
           </div>
         </div>
 
-        {/* Middle Scrollable Section: Dialogue & Architecture Note (Never Overflow Screen!) */}
+        {/* Middle Scrollable Section: Dialogue & Architecture Note */}
         <div className="overflow-y-auto flex-1 min-h-0 space-y-2 pr-0.5 max-h-[35vh]">
           {/* Punchy Verbatim Dialogue */}
-          <div className="rounded-xl bg-gradient-to-br from-blue-50/70 to-indigo-50/50 border border-blue-100/90 p-2.5 text-xs text-slate-800 leading-relaxed font-sans shadow-inner">
+          <div className="rounded-xl bg-blue-50/90 border border-blue-200 p-2.5 text-xs text-slate-900 leading-relaxed font-sans shadow-inner">
             <div className="text-[10px] font-extrabold text-blue-900 uppercase tracking-wider mb-1 flex items-center gap-1">
               <span>🎙️ Voiceover Line:</span>
             </div>
-            <p className="italic text-slate-800 font-medium text-[11px] leading-snug">
+            <p className="italic text-slate-900 font-semibold text-[11px] leading-snug">
               "{currentStep.dialogue}"
             </p>
           </div>
 
           {/* Architecture & Engineering Invariant */}
-          <div className="rounded-lg bg-slate-50 border border-slate-200 p-2 text-[10px] text-slate-600 space-y-0.5">
-            <div className="flex items-center gap-1 font-bold text-slate-800 text-[9.5px] uppercase tracking-wider">
-              <Terminal className="w-3 h-3 text-slate-500" />
+          <div className="rounded-lg bg-slate-50 border border-slate-200 p-2 text-[10px] text-slate-700 space-y-0.5">
+            <div className="flex items-center gap-1 font-bold text-slate-900 text-[9.5px] uppercase tracking-wider">
+              <Terminal className="w-3 h-3 text-slate-600" />
               <span>Technical Pipeline:</span>
             </div>
-            <p className="text-[10px] leading-snug font-mono text-slate-700">
+            <p className="text-[10px] leading-snug font-mono text-slate-800 font-medium">
               {currentStep.dataFlowNote}
             </p>
           </div>
         </div>
 
-        {/* Action Button & Footer Controls (Fixed / Shrink-0 - Guaranteed In View!) */}
+        {/* Action Button & Footer Controls (Fixed / Shrink-0) */}
         <div className="shrink-0 pt-2.5 mt-1 border-t border-slate-100 space-y-2">
           {/* Primary Action Button */}
           <button
@@ -460,7 +452,7 @@ export const InteractiveDemoTour: React.FC = () => {
               className={`flex items-center gap-0.5 px-2 py-1 rounded font-bold text-[10px] transition-colors ${
                 currentStep.step === 1
                   ? 'text-slate-300 cursor-not-allowed'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               <ChevronLeft className="w-3 h-3" />
@@ -468,7 +460,7 @@ export const InteractiveDemoTour: React.FC = () => {
             </button>
 
             {/* Auto Advance Toggle */}
-            <label className="flex items-center gap-1 cursor-pointer text-[10px] text-slate-600 font-semibold select-none hover:text-slate-900">
+            <label className="flex items-center gap-1 cursor-pointer text-[10px] text-slate-700 font-bold select-none hover:text-slate-900">
               <input
                 type="checkbox"
                 checked={isAutoPlay}
@@ -490,7 +482,7 @@ export const InteractiveDemoTour: React.FC = () => {
                       ? 'bg-blue-600 w-4'
                       : idx < currentStepIndex
                       ? 'bg-emerald-500'
-                      : 'bg-slate-200 hover:bg-slate-300'
+                      : 'bg-slate-300 hover:bg-slate-400'
                   }`}
                   title={`Step ${idx + 1}`}
                 />
