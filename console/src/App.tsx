@@ -37,8 +37,6 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
-      <InteractiveDemoTour />
-
       {/* View routing based on auth state */}
       {!currentUser && <LoginPage onLoginSuccess={handleLoginSuccess} />}
 
@@ -49,6 +47,9 @@ const AppContent: React.FC = () => {
       {currentUser && (currentUser.role === 'professor' || currentUser.role === 'admin') && (
         <FacultyTriageConsole user={currentUser} onLogout={handleLogout} />
       )}
+
+      {/* Interactive Tour MUST be the last element to guarantee it stays on top of all modals */}
+      <InteractiveDemoTour />
     </div>
   );
 };

@@ -510,14 +510,18 @@ export const DemoTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [currentStepIndex]);
 
   const nextStep = useCallback(() => {
-    executeCurrentAction();
-    if (currentStepIndex < TOUR_STEPS.length - 1) {
-      setCurrentStepIndex(i => i + 1);
-    } else {
-      // End tour or show completion
-      setCurrentStepIndex(TOUR_STEPS.length - 1);
+    try {
+      executeCurrentAction();
+    } catch (err) {
+      console.warn('executeCurrentAction error:', err);
     }
-  }, [currentStepIndex, executeCurrentAction]);
+    setCurrentStepIndex(prev => {
+      if (prev < TOUR_STEPS.length - 1) {
+        return prev + 1;
+      }
+      return prev;
+    });
+  }, [executeCurrentAction]);
 
   const prevStep = useCallback(() => {
     if (currentStepIndex > 0) {

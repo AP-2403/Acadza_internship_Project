@@ -213,14 +213,14 @@ export const InteractiveDemoTour: React.FC = () => {
   }[currentStep.speakerRole] || { bg: 'bg-slate-100 text-slate-800 border-slate-300' };
 
   return (
-    <div className="fixed inset-0 z-50 pointer-events-none select-none font-sans">
+    <div className="fixed inset-0 z-[999999] pointer-events-none select-none font-sans">
       
       {/* 4-Quadrant Spotlight Curtain or Full Dim Backdrop */}
       {targetRect ? (
         <>
           {/* Top Curtain */}
           <div
-            className="fixed bg-slate-950/60 transition-all duration-200 pointer-events-auto z-[9990]"
+            className="fixed bg-slate-950/60 transition-all duration-200 pointer-events-auto z-[999990]"
             style={{
               top: 0,
               left: 0,
@@ -231,7 +231,7 @@ export const InteractiveDemoTour: React.FC = () => {
 
           {/* Bottom Curtain */}
           <div
-            className="fixed bg-slate-950/60 transition-all duration-200 pointer-events-auto z-[9990]"
+            className="fixed bg-slate-950/60 transition-all duration-200 pointer-events-auto z-[999990]"
             style={{
               top: targetRect.bottom,
               left: 0,
@@ -242,7 +242,7 @@ export const InteractiveDemoTour: React.FC = () => {
 
           {/* Left Curtain */}
           <div
-            className="fixed bg-slate-950/60 transition-all duration-200 pointer-events-auto z-[9990]"
+            className="fixed bg-slate-950/60 transition-all duration-200 pointer-events-auto z-[999990]"
             style={{
               top: targetRect.top,
               left: 0,
@@ -253,7 +253,7 @@ export const InteractiveDemoTour: React.FC = () => {
 
           {/* Right Curtain */}
           <div
-            className="fixed bg-slate-950/60 transition-all duration-200 pointer-events-auto z-[9990]"
+            className="fixed bg-slate-950/60 transition-all duration-200 pointer-events-auto z-[999990]"
             style={{
               top: targetRect.top,
               left: targetRect.right,
@@ -264,7 +264,7 @@ export const InteractiveDemoTour: React.FC = () => {
 
           {/* Target Element Glowing Ring & Spotlight Frame */}
           <div
-            className="fixed rounded-xl pointer-events-none transition-all duration-200 ring-4 ring-blue-500/70 shadow-[0_0_30px_rgba(59,130,246,0.55)] animate-pulse z-[9992]"
+            className="fixed rounded-xl pointer-events-none transition-all duration-200 ring-4 ring-blue-500/70 shadow-[0_0_30px_rgba(59,130,246,0.55)] animate-pulse z-[999992]"
             style={{
               top: targetRect.top,
               left: targetRect.left,
@@ -280,13 +280,13 @@ export const InteractiveDemoTour: React.FC = () => {
           </div>
         </>
       ) : (
-        <div className="fixed inset-0 bg-slate-950/40 pointer-events-auto z-[9990]" />
+        <div className="fixed inset-0 bg-slate-950/40 pointer-events-auto z-[999990]" />
       )}
 
       {/* Solid Opaque Tour Card (Strictly Screen-Clamped, Never Hidden or Darkened) */}
       <div
         ref={cardRef}
-        className="fixed w-[380px] max-w-[calc(100vw-24px)] max-h-[calc(100vh-28px)] bg-white border border-slate-300 rounded-2xl shadow-2xl p-4 text-slate-800 pointer-events-auto transition-all duration-200 flex flex-col z-[9999] ring-1 ring-slate-900/10"
+        className="fixed w-[380px] max-w-[calc(100vw-24px)] max-h-[calc(100vh-28px)] bg-white border border-slate-300 rounded-2xl shadow-2xl p-4 text-slate-800 pointer-events-auto transition-all duration-200 flex flex-col z-[999999] ring-1 ring-slate-900/10"
         style={{
           top: cardPos.top,
           left: cardPos.left
