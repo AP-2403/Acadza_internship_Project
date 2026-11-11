@@ -193,14 +193,14 @@ uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 │   ├── ai_copilot.py                     # Gemini Flash LLM + Typo + Formula Engine
 │   ├── database.py                       # SQLite database & serverless /tmp mount
 │   ├── auth.py                           # Multi-role authentication (Student, Faculty)
-│   └── acadza.db                         # Seeded SQLite database (initialized via init_db)
+│   └── acadza.db                         # SQLite database (auto-seeded on startup or via scripts/reset_data.py)
 ├── data/
 │   ├── questions.json                    # Synchronized question bank (43 questions)
 │   ├── reports.json                      # 44 student feedback reports
 │   └── taxonomy.json                     # Closed verdicts & repairs dictionary
 ├── engine/                         # Offline CLI evaluation pipeline
 │   ├── run_triage.py                     # CLI benchmark generator
-│   └── test_engine.py                    # Automated test suite (11/11 passing)
+│   └── test_engine.py                    # Automated test suite (18/18 passing)
 ├── api/
 │   └── index.py                          # Vercel Serverless ASGI entry point
 ├── package.json                          # Monorepo build orchestrator

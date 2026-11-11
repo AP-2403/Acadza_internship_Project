@@ -50,7 +50,7 @@ export const FacultySolutionCopilot: React.FC<FacultySolutionCopilotProps> = ({
   const [updateDbSolution, setUpdateDbSolution] = useState(false);
   const [dbUpdateStatus, setDbUpdateStatus] = useState<string | null>(null);
 
-  const { isActive: isTourActive, currentStepIndex, demoState } = useDemoTour();
+  const { isActive: isTourActive, currentStepIndex, demoState, jumpToStep } = useDemoTour();
 
   const recognitionRef = useRef<any>(null);
 
@@ -154,6 +154,9 @@ export const FacultySolutionCopilot: React.FC<FacultySolutionCopilotProps> = ({
     if (result) {
       setAiResult(result);
       setCustomReply(result.studentReply);
+      if (isTourActive && currentStepIndex === 5) {
+        jumpToStep(6);
+      }
     }
   };
 
@@ -185,6 +188,9 @@ export const FacultySolutionCopilot: React.FC<FacultySolutionCopilotProps> = ({
 
     onApplyReply(customReply, finalSolutionHtml, finalKey);
     if (onClose) onClose();
+    if (isTourActive && (currentStepIndex === 5 || currentStepIndex === 6)) {
+      jumpToStep(7);
+    }
   };
 
   return (

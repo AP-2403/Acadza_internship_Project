@@ -138,11 +138,13 @@ class TestTriageEngine(unittest.TestCase):
 
     def test_patch_idempotence(self):
         """Verifies apply_question_patch is idempotent and does not duplicate content or append blindly."""
+        import copy
         from backend.main import apply_question_patch, QUESTIONS_MAP, QUESTIONS_DATA, QUESTIONS_PATH
 
         test_qid = "622f08d7b70e4b50e4500a1b"
         q = QUESTIONS_MAP.get(test_qid)
         self.assertIsNotNone(q)
+        orig_q_backup = copy.deepcopy(q)
         q_type = q.get("questionType", "scq")
         orig_q = q[q_type]["question"]
 
@@ -167,10 +169,15 @@ class TestTriageEngine(unittest.TestCase):
         count_after_second = res2[q_type]["question"].count("(D) 15 m/s")
         self.assertEqual(count_after_second, 1, "Patch must be idempotent and not append repeatedly")
 
-        # Revert back to pristine
-        q[q_type]["question"] = clean_q
+        # Revert back to pristine exact backup
+        q.clear()
+        q.update(orig_q_backup)
         with open(QUESTIONS_PATH, "w", encoding="utf-8") as f:
             json.dump(QUESTIONS_DATA, f, indent=2, ensure_ascii=False)
+        console_path = BASE_DIR / "console" / "src" / "data" / "questions.json"
+        if console_path.exists():
+            with open(console_path, "w", encoding="utf-8") as f:
+                json.dump(QUESTIONS_DATA, f, indent=2, ensure_ascii=False)
 
     def test_prompt_injection_sanitizer(self):
         """Verifies ai_copilot detects injection and enforces safe defaults."""

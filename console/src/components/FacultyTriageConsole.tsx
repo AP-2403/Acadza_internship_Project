@@ -66,7 +66,7 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
   const [selectedSubject, setSelectedSubject] = useState<string>(user.subject || 'all');
   const [queueSortMethod, setQueueSortMethod] = useState<'newest' | 'oldest' | 'urgency'>('newest');
 
-  const { isActive: isTourActive, currentStepIndex } = useDemoTour();
+  const { isActive: isTourActive, currentStepIndex, jumpToStep } = useDemoTour();
 
   // Live doubts filtering and sorting
   const [doubtsFilter, setDoubtsFilter] = useState<'all' | 'pending' | 'auto_applied' | 'reviewed'>('all');
@@ -1466,10 +1466,18 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
               onApplyReply={(replyText, updatedOfficialSolution, newAnswerKey) => {
                 handleUpdateStudentReply(replyText);
                 setShowFocusCopilot(false);
+                if (isTourActive && (currentStepIndex === 5 || currentStepIndex === 6)) {
+                  jumpToStep(7);
+                }
                 setActionNotice("Faculty explanation & updated derivation ready to dispatch!");
                 setTimeout(() => setActionNotice(null), 4000);
               }}
-              onClose={() => setShowFocusCopilot(false)}
+              onClose={() => {
+                setShowFocusCopilot(false);
+                if (isTourActive && (currentStepIndex === 5 || currentStepIndex === 6)) {
+                  jumpToStep(7);
+                }
+              }}
             />
           </div>
         </div>
