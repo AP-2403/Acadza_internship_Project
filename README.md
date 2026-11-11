@@ -8,7 +8,7 @@
 > **Candidate Submission:** Ayyam ([GitHub: @AP-2403](https://github.com/AP-2403))  
 > **Live Production URL:** [https://acadza-liart.vercel.app/](https://acadza-liart.vercel.app/)  
 > **Repository:** [https://github.com/AP-2403/Acadza_internship_Project](https://github.com/AP-2403/Acadza_internship_Project)  
-> **Video Walkthrough:** [Link to 3-Minute Walkthrough Video](#-3-minute-video-walkthrough)  
+> **Video Walkthrough:** [https://youtu.be/_RIMWtqhPlA](https://youtu.be/_RIMWtqhPlA)  
 
 ---
 
@@ -121,7 +121,7 @@ Student Submits Doubt ("50 V option A is correct why C", "Option typo / grammar"
 
 ## 📹 3-Minute Video Walkthrough
 
-> **Video Link:** [Insert your Loom / YouTube / Google Drive link here]
+> **Video Link:** [https://youtu.be/_RIMWtqhPlA](https://youtu.be/_RIMWtqhPlA)
 
 ### Video Outline & Timestamps:
 * **0:00 - 0:45 | Student Assessment & Feedback Submission:** Taking a test, encountering an error, and submitting feedback using quick chips.
@@ -247,4 +247,4 @@ Please find below the answers to the questions requested for this submission:
 ### Submission Links Summary:
 - **Public GitHub Repository:** [https://github.com/AP-2403/Acadza_internship_Project](https://github.com/AP-2403/Acadza_internship_Project)
 - **Live Production URL:** [https://acadza-liart.vercel.app/](https://acadza-liart.vercel.app/)
-- **Video Walkthrough URL:** `[Ready to record via storyboard below / Loom / Drive]`
+- **Video Walkthrough URL:** [https://youtu.be/_RIMWtqhPlA](https://youtu.be/_RIMWtqhPlA)

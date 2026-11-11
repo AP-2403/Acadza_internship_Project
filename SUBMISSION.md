@@ -9,7 +9,7 @@ This file contains the verbatim answers for the submission email and the 3-minut
 ### Repository & Project Links
 - **GitHub Repository (Public):** https://github.com/AP-2403/Acadza_internship_Project
 - **Live Faculty Review Console URL:** https://acadza-liart.vercel.app/
-- **3-Minute Loom / Video Recording URL:** [Insert Video Link Here - see storyboard below]
+- **3-Minute Loom / Video Recording URL:** https://youtu.be/_RIMWtqhPlA
 
 ### 1. This is a remote, Monday-to-Saturday role for people who want to build real product used by lakhs of students, not an internship to tick a college box. Is that you?
 **Yes, absolutely.** I like building products designed to handle real production volume, edge cases, and messy student inputs rather than theoretical exercises. The prospect of directly protecting lakhs of students from losing marks, ranks, and confidence due to bad question data is a great form of problem to tackle. I have no issue in working from Monday to Saturday on building features and products that will be used by students on daily basis .
@@ -29,8 +29,8 @@ EdTech platforms are only as trustworthy as their question bank; a single wrong 
 
 **Target Duration:** 2 minutes 45 seconds (165 seconds) — strictly within the 2.5 to 3 min limit  
 **Total Word Count:** ~385 words (comfortable 135–140 words/min pace)  
-**Format:** Loom / unlisted YouTube / Google Drive  
-**Link:** [Insert Link Here]
+**Format:** YouTube Walkthrough  
+**Link:** https://youtu.be/_RIMWtqhPlA
 
 ### Preparation Before You Hit Record:
 1. Open two browser tabs:
@@ -104,4 +104,4 @@ EdTech platforms are only as trustworthy as their question bank; a single wrong 
 - [x] **Faculty Review Console** with MathML rendering, surgical diffs, audit trail, keyboard shortcuts, and responsiveness.
 - [x] **Live Console Deployment URL** (Vercel / Render / Netlify).
 - [x] **Public GitHub Repository** link ready for email submission.
-- [ ] **Screen Recording** (Walkthrough storyboard scripted and ready to record via Loom / Drive).
+- [x] **Screen Recording** (3-minute walkthrough video published: https://youtu.be/_RIMWtqhPlA).
