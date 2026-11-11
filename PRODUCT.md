@@ -18,20 +18,23 @@ Simultaneously, **faculties lose cognitive stamina**: reviewing dozens of unstru
 
 ## 2. What We Would NEVER Let the AI Auto-Apply (And Why)
 We strictly enforce a deterministic safety boundary where the AI is prohibited from auto-applying:
-1. **Missing or Corrupted Diagrams (`diagram`):** Diagrams require exact vector angles and geometric clarity. An AI hallucinating coordinate systems or vector arrows misleads thousands of students.
-2. **Identical Options & Distractor Generation (`identical_options`):** Writing plausible distractors is creative pedagogical authoring. The AI may propose suggestions, but a human educator must approve them.
-3. **Syllabus Rationalization (`syllabus`):** Recent NTA/NMC syllabus deletions (e.g., NEET 2024/2025) require curriculum-committee authority. Prematurely marking a question "out of syllabus" creates false student complacency.
+1. **Missing or Corrupted Diagrams (`diagram`):** Diagrams require exact vector angles, phase markers, and geometric clarity. An AI hallucinating coordinate systems or vector arrows misleads thousands of students.
+2. **Missing Distractors & Identical Options (`identical_options`, `option_repair`):** Writing plausible distractors is creative pedagogical authoring. The AI must never invent synthetic distractors without authoritative sources (e.g., auto-generating `(D) 15 m/s` for R009/R010 when the solution only derives 10 m/s). Missing options are strictly routed to `faculty_review` with `edit: null` so human educators author authentic distractors.
+3. **Syllabus Rationalization (`syllabus`):** Recent NTA/NMC syllabus deletions (e.g., NEET 2024/2025) require curriculum-committee authority. Prematurely marking a question "out of syllabus" (e.g., R026) creates false student complacency.
 4. **Question Retractions (`unsound`) & Full Restatements (`wrong_question`):** Withdrawing a question or awarding bonus marks affects coaching batch percentiles and institute credibility; human sign-off is non-negotiable.
-5. **Adversarial / Flagged Injections:** Any report attempting prompt override (`"IGNORE ALL PREVIOUS INSTRUCTIONS"`) is quarantined for human review.
+5. **Adversarial / Flagged Injections:** Any report attempting prompt override (`"IGNORE ALL PREVIOUS INSTRUCTIONS"`, R027) is quarantined for human review.
 
 ---
 
 ## 3. The One Metric We Would Watch in Week 1
 **Faculty Edit-Reversal Rate (FERR) / Post-Remediation Re-Report Rate:**
-> *Percentage of AI auto-applied fixes (or faculty-approved fixes) that receive a second student report or faculty edit within 7 days.*
+> *Percentage of AI auto-applied fixes (or faculty-approved fixes) that receive a second student report, faculty edit, or reversal within 7 days.*
 
 - **Target:** `< 1.5%`.
-- **Why this metric:** Speed of remediation is useless if our surgical patches introduce secondary bugs. If FERR spikes above 2%, the confidence threshold automatically ratchets from 0.90 to 0.95.
+- **Dynamic FERR Threshold Ratchet Implementation:**
+  Speed of remediation is useless if our surgical patches introduce secondary bugs. We implement this directly in code (`calculate_ferr()` in `engine/guardrails.py` querying SQLite `audit_log`):
+  $$\text{FERR} = \frac{\text{Reversals or Secondary Re-Reports}}{\text{Total Fixes Approved / Auto-Applied}} \times 100$$
+  If FERR exceeds **2.0%**, the system's minimum confidence threshold for `auto_apply` automatically ratchets from **0.90 to 0.95**, instantly routing borderline defects to faculty review until remediation quality stabilizes.
 
 ---
 
