@@ -146,9 +146,18 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
       }
     } else if (currentStepIndex === 9) {
       // Step 10: Closed-Loop Trust: Student Score Restored
-      if (phase !== 'results') {
-        setPhase('results');
-      }
+      setPhase('results');
+
+      // Guarantee stats is NEVER null on Step 10 remount!
+      const restoredStats: TestStats = {
+        total: 43,
+        attempted: 1,
+        correct: 1,
+        incorrect: 0,
+        scorePercent: 100
+      };
+      setStats(restoredStats);
+
       const resolvedDoubt: StudentDoubtItem = {
         reportId: 'R_DEMO_LCR',
         questionId: '60f744b3f1b9bc7cc7b4a949',
@@ -162,16 +171,27 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
         studentReply: 'Hello Aarav! You were completely right. In an AC series LCR circuit, voltages across inductor and capacitor are 180° out of phase, so the net reactive voltage is (60 V - 30 V) = 30 V. Combining with 40 V across resistance via phasors gives V = √(40² + 30²) = 50 V. The answer key has been corrected to Option A and your score updated (+4 marks)!',
         isCorrected: true
       };
-      setMyDoubts(prev => {
-        const filtered = prev.filter(d => d.questionId !== '60f744b3f1b9bc7cc7b4a949');
-        return [resolvedDoubt, ...filtered];
+      setMyDoubts([resolvedDoubt]);
+
+      // Populate results synchronously with LCR question marked Correct (+4 marks)!
+      const qs = (questionsList && questionsList.length > 0 ? questionsList : questionsRaw) as any[];
+      const evaluatedResults: QuestionTestResult[] = qs.map((q) => {
+        const qid = q._id;
+        const isLcr = qid.includes('60f744b3');
+        const qType: 'scq' | 'mcq' | 'integerQuestion' = q.questionType || 'scq';
+        return {
+          questionId: qid,
+          subject: q.subject || 'Physics',
+          chapter: q.chapter || 'Alternating Current',
+          questionType: qType,
+          questionText: q[qType]?.question || '',
+          solutionText: q[qType]?.solution || '',
+          studentAnswer: isLcr ? 'A' : null,
+          correctAnswer: 'A',
+          status: isLcr ? ('correct' as const) : ('unattempted' as const)
+        };
       });
-      setStats(prev => prev ? {
-        ...prev,
-        scorePercent: Math.min(100, prev.scorePercent + 10),
-        correct: prev.correct + 1,
-        incorrect: Math.max(0, prev.incorrect - 1)
-      } : null);
+      setResults(evaluatedResults);
     }
   }, [isTourActive, currentStepIndex, phase, visibleSolvingQuestions, currentIndex, user.username, demoState.studentComment]);
 
@@ -974,7 +994,7 @@ export const StudentTestPortal: React.FC<StudentTestPortalProps> = ({ user, onLo
           <div className="max-w-5xl mx-auto space-y-6">
             
             {/* Scorecard Summary Banner */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <div id="tour-student-scorecard" className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                   <div className="flex items-center gap-2 text-xs font-semibold text-blue-700 mb-1">

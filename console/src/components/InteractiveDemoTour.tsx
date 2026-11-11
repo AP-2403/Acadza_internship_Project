@@ -9,7 +9,11 @@ import {
   X, 
   Zap, 
   Terminal,
-  Compass
+  Compass,
+  ShieldCheck,
+  CheckCircle2,
+  Award,
+  Mic
 } from 'lucide-react';
 import { useDemoTour } from '../context/DemoTourContext';
 
@@ -46,7 +50,23 @@ export const InteractiveDemoTour: React.FC = () => {
   const [targetRect, setTargetRect] = useState<Rect | null>(null);
   const [cardPos, setCardPos] = useState<{ top: number; left: number }>({ top: 20, left: 20 });
   const [cornerMode, setCornerMode] = useState<CornerMode>('auto');
+  const [isCompletedModalOpen, setIsCompletedModalOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // Play Thank You voiceover when completion panel opens
+  useEffect(() => {
+    if (isCompletedModalOpen && !isMuted) {
+      try {
+        const audio = new Audio('/audio/thank-you.m4a');
+        audio.play().catch(() => {
+          const fallback = new Audio('/audio/thank-you.mp3');
+          fallback.play().catch(() => {});
+        });
+      } catch (e) {
+        console.warn('Failed to play thank you audio:', e);
+      }
+    }
+  }, [isCompletedModalOpen, isMuted]);
 
   // Measure and track target element
   const updateRect = useCallback(() => {
@@ -431,13 +451,19 @@ export const InteractiveDemoTour: React.FC = () => {
           {/* Primary Action Button */}
           <button
             type="button"
-            onClick={nextStep}
+            onClick={() => {
+              if (currentStep.step === totalSteps) {
+                setIsCompletedModalOpen(true);
+              } else {
+                nextStep();
+              }
+            }}
             className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/25 hover:from-blue-700 hover:to-indigo-800 hover:scale-[1.01] active:scale-[0.99] transition-all group"
           >
             <div className="flex items-center gap-1.5">
               <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300 animate-bounce" />
               <span className="text-left font-black tracking-wide text-[11px]">
-                {currentStep.actionLabel}
+                {currentStep.step === totalSteps ? '🎉 Complete Demo & View Summary' : currentStep.actionLabel}
               </span>
             </div>
             <ChevronRight className="w-3.5 h-3.5 text-white group-hover:translate-x-1 transition-transform" />
@@ -492,6 +518,114 @@ export const InteractiveDemoTour: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Thank You & Demo Summary Celebration Panel */}
+      {isCompletedModalOpen && (
+        <div className="fixed inset-0 z-[9999999] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md pointer-events-auto animate-in fade-in duration-200">
+          <div className="w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden text-slate-800 flex flex-col p-6 sm:p-8 space-y-5 animate-in zoom-in-95 duration-200">
+            
+            {/* Top Badge & Close */}
+            <div className="flex items-center justify-between">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-300">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
+                <span>Autonomous Pipeline Verified!</span>
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setIsCompletedModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Header & Celebration */}
+            <div className="text-center space-y-2">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-emerald-500 mx-auto flex items-center justify-center text-3xl shadow-lg shadow-blue-500/25">
+                🏆
+              </div>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                Thank You for Experiencing Acadza!
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+                You just observed the complete autonomous report-to-fix pipeline, from real-time student doubt intake to faculty voice dictation, SymPy AST validation, and score restoration.
+              </p>
+            </div>
+
+            {/* 4 Pillars Recap Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left pt-1">
+              <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200/80 space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-xs text-blue-900">
+                  <ShieldCheck className="w-4 h-4 text-blue-600" />
+                  <span>Zero-Hallucination Guardrails</span>
+                </div>
+                <p className="text-[11px] text-slate-600 leading-snug">
+                  AST formula checks and SymPy invariants prevent AI hallucinations and arithmetic slips.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-xs text-indigo-900">
+                  <Mic className="w-4 h-4 text-indigo-600" />
+                  <span>Voice AI Faculty Co-Pilot</span>
+                </div>
+                <p className="text-[11px] text-slate-600 leading-snug">
+                  Real-time Web Speech audio streaming normalized into publication-quality KaTeX LaTeX formulas.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-xs text-emerald-900">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Idempotent Closed-Loop</span>
+                </div>
+                <p className="text-[11px] text-slate-600 leading-snug">
+                  Atomic SQLite & JSON patching with immutable audit logging. Restores student scores (+4 marks).
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-xs text-amber-900">
+                  <Award className="w-4 h-4 text-amber-600" />
+                  <span>Dean Institutional SLA</span>
+                </div>
+                <p className="text-[11px] text-slate-600 leading-snug">
+                  Multi-department segmentation tracks resolution rates across Physics, Zoology, and Botany.
+                </p>
+              </div>
+            </div>
+
+            {/* Next Steps / Replay Buttons */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCompletedModalOpen(false);
+                  jumpToStep(0);
+                }}
+                className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-xs shadow-md shadow-blue-500/25 hover:from-blue-700 hover:to-indigo-700 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>Replay Guided Demo Tour</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCompletedModalOpen(false);
+                  endTour();
+                }}
+                className="w-full sm:w-auto py-3 px-5 rounded-xl border border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors"
+              >
+                <span>Explore Live Platform Freely</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

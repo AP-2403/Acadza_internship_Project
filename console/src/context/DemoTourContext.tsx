@@ -34,7 +34,7 @@ export const TOUR_STEPS: TourStep[] = [
     targetSelector: '#tour-login-card',
     fallbackSelector: '.login-portal-card',
     preferredSide: 'right',
-    audioFile: '/audio/step-01.mp3',
+    audioFile: '/audio/step-01.m4a',
     roleRequired: null
   },
   {
@@ -50,7 +50,7 @@ export const TOUR_STEPS: TourStep[] = [
     targetSelector: '#tour-student-test-view',
     fallbackSelector: '#tour-student-question',
     preferredSide: 'right',
-    audioFile: '/audio/step-02.mp3',
+    audioFile: '/audio/step-02.m4a',
     roleRequired: 'student'
   },
   {
@@ -66,7 +66,7 @@ export const TOUR_STEPS: TourStep[] = [
     targetSelector: '#tour-student-report-doubt',
     fallbackSelector: '#tour-doubt-modal',
     preferredSide: 'top',
-    audioFile: '/audio/step-03.mp3',
+    audioFile: '/audio/step-03.m4a',
     roleRequired: 'student'
   },
   {
@@ -82,7 +82,7 @@ export const TOUR_STEPS: TourStep[] = [
     targetSelector: '#tour-faculty-queue-item',
     fallbackSelector: '#tour-faculty-queue',
     preferredSide: 'right',
-    audioFile: '/audio/step-04.mp3',
+    audioFile: '/audio/step-04.m4a',
     roleRequired: 'professor',
     targetSubject: 'Physics'
   },
@@ -99,7 +99,7 @@ export const TOUR_STEPS: TourStep[] = [
     targetSelector: '#tour-focus-diff-card',
     fallbackSelector: '#tour-focus-diff',
     preferredSide: 'bottom',
-    audioFile: '/audio/step-05.mp3',
+    audioFile: '/audio/step-05.m4a',
     roleRequired: 'professor',
     targetSubject: 'Physics'
   },
@@ -116,7 +116,7 @@ export const TOUR_STEPS: TourStep[] = [
     targetSelector: '#tour-voice-copilot-modal',
     fallbackSelector: '#tour-voice-copilot-btn',
     preferredSide: 'left',
-    audioFile: '/audio/step-06.mp3',
+    audioFile: '/audio/step-06.m4a',
     roleRequired: 'professor',
     targetSubject: 'Physics'
   },
@@ -133,7 +133,7 @@ export const TOUR_STEPS: TourStep[] = [
     targetSelector: '#tour-formula-sanity-result',
     fallbackSelector: '#tour-sanity-check-box',
     preferredSide: 'top',
-    audioFile: '/audio/step-07.mp3',
+    audioFile: '/audio/step-07.m4a',
     roleRequired: 'professor',
     targetSubject: 'Physics'
   },
@@ -150,7 +150,7 @@ export const TOUR_STEPS: TourStep[] = [
     targetSelector: '#tour-approve-hero-btn',
     fallbackSelector: '#tour-action-approve-btn',
     preferredSide: 'top',
-    audioFile: '/audio/step-08.mp3',
+    audioFile: '/audio/step-08.m4a',
     roleRequired: 'professor',
     targetSubject: 'Physics'
   },
@@ -167,7 +167,7 @@ export const TOUR_STEPS: TourStep[] = [
     targetSelector: '#tour-dean-dept-bar',
     fallbackSelector: '#tour-dean-segmentation-bar',
     preferredSide: 'bottom',
-    audioFile: '/audio/step-09.mp3',
+    audioFile: '/audio/step-09.m4a',
     roleRequired: 'admin'
   },
   {
@@ -181,9 +181,9 @@ export const TOUR_STEPS: TourStep[] = [
     actionDescription: 'Verify resolved doubt on student scorecard with full explanation and marks restored (+4).',
     dataFlowNote: 'CLOSED-LOOP VALUE: Transforms negative student frustration into immediate academic trust without regressions.',
     targetSelector: '#tour-student-resolved-card',
-    fallbackSelector: '#tour-student-doubts-tab',
+    fallbackSelector: '#tour-student-scorecard',
     preferredSide: 'center',
-    audioFile: '/audio/step-10.mp3',
+    audioFile: '/audio/step-10.m4a',
     roleRequired: 'student'
   }
 ];
@@ -267,39 +267,8 @@ export const DemoTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       audioRef.current.src = '';
     }
 
-    const audio = new Audio();
-    audio.src = step.audioFile;
-    audio.muted = isMuted;
-    audioRef.current = audio;
-
-    let playedViaAudio = false;
-
-    audio.addEventListener('playing', () => {
-      setIsSpeaking(true);
-      playedViaAudio = true;
-    });
-
-    audio.addEventListener('timeupdate', () => {
-      if (audio.duration) {
-        setAudioProgress((audio.currentTime / audio.duration) * 100);
-      }
-    });
-
-    const handleAudioEnd = () => {
-      setIsSpeaking(false);
-      setAudioProgress(100);
-      if (isAutoPlay) {
-        autoAdvanceTimerRef.current = setTimeout(() => {
-          nextStep();
-        }, 1500);
-      }
-    };
-
-    audio.addEventListener('ended', handleAudioEnd);
-
-    audio.addEventListener('error', () => {
-      // Audio file not found -> Fallback to Web Speech API Text-to-Speech!
-      if (!playedViaAudio && 'speechSynthesis' in window) {
+    const speakTTS = () => {
+      if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(step.dialogue);
         utterance.rate = 1.0;
         utterance.pitch = step.speakerRole === 'student' ? 1.05 : step.speakerRole === 'faculty' ? 0.95 : 1.0;
@@ -325,26 +294,55 @@ export const DemoTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       } else {
         setIsSpeaking(false);
       }
-    });
+    };
 
-    audio.play().catch(() => {
-      // Audio play blocked or file missing -> Trigger SpeechSynthesis
-      if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(step.dialogue);
-        utterance.rate = 1.0;
-        utterance.onstart = () => setIsSpeaking(true);
-        utterance.onend = () => {
-          setIsSpeaking(false);
-          setAudioProgress(100);
-          if (isAutoPlay) {
-            autoAdvanceTimerRef.current = setTimeout(() => {
-              nextStep();
-            }, 1500);
-          }
-        };
-        window.speechSynthesis.speak(utterance);
-      }
-    });
+    const tryLoadAudio = (audioUrl: string) => {
+      const audio = new Audio();
+      audio.src = audioUrl;
+      audio.muted = isMuted;
+      audioRef.current = audio;
+
+      let playedViaAudio = false;
+
+      audio.addEventListener('playing', () => {
+        setIsSpeaking(true);
+        playedViaAudio = true;
+      });
+
+      audio.addEventListener('timeupdate', () => {
+        if (audio.duration) {
+          setAudioProgress((audio.currentTime / audio.duration) * 100);
+        }
+      });
+
+      audio.addEventListener('ended', () => {
+        setIsSpeaking(false);
+        setAudioProgress(100);
+        if (isAutoPlay) {
+          autoAdvanceTimerRef.current = setTimeout(() => {
+            nextStep();
+          }, 1500);
+        }
+      });
+
+      audio.addEventListener('error', () => {
+        if (!playedViaAudio && audioUrl.endsWith('.m4a')) {
+          tryLoadAudio(audioUrl.replace(/\.m4a$/, '.mp3'));
+        } else if (!playedViaAudio) {
+          speakTTS();
+        }
+      });
+
+      audio.play().catch(() => {
+        if (!playedViaAudio && audioUrl.endsWith('.m4a')) {
+          tryLoadAudio(audioUrl.replace(/\.m4a$/, '.mp3'));
+        } else {
+          speakTTS();
+        }
+      });
+    };
+
+    tryLoadAudio(step.audioFile);
   }, [isMuted, isAutoPlay]);
 
   // Handle step activation & role requirements
