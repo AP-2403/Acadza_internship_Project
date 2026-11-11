@@ -89,6 +89,18 @@ def init_db():
         )
     """)
 
+    # 1b. Persistent Sessions table (guarantees cross-instance serverless session validity)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS sessions (
+            token TEXT PRIMARY KEY,
+            username TEXT NOT NULL,
+            name TEXT NOT NULL,
+            role TEXT NOT NULL,
+            subject TEXT,
+            created_at REAL NOT NULL
+        )
+    """)
+
     # 2. Test sessions table
     cur.execute("""
         CREATE TABLE IF NOT EXISTS test_sessions (

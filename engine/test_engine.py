@@ -185,5 +185,118 @@ class TestTriageEngine(unittest.TestCase):
         self.assertIn("Adversarial prompt injection attempt detected", triage["evidence"])
 
 
+    def test_non_matching_find_fails_and_returns_none(self):
+        """Verifies apply_question_patch fails cleanly (returns None) when find text is not present."""
+        from backend.main import apply_question_patch
+        test_qid = "622f08d7b70e4b50e4500a1b"
+        bogus_patch = {
+            "field": "question",
+            "find": "THIS_STRING_DOES_NOT_EXIST_IN_THE_QUESTION_STEM_12345",
+            "replace": "replacement_string"
+        }
+        res = apply_question_patch(test_qid, bogus_patch)
+        self.assertIsNone(res, "apply_question_patch must return None when find string does not exist")
+
+    def test_ambiguous_find_fails_and_returns_none(self):
+        """Verifies apply_question_patch fails cleanly when find text matches multiple times."""
+        from backend.main import apply_question_patch
+        test_qid = "622f08d7b70e4b50e4500a1b"
+        ambiguous_patch = {
+            "field": "question",
+            "find": "a",  # matches many times in the question HTML
+            "replace": "X"
+        }
+        res = apply_question_patch(test_qid, ambiguous_patch)
+        self.assertIsNone(res, "apply_question_patch must return None when find text matches multiple times")
+
+    def test_answer_precondition_check(self):
+        """Verifies apply_question_patch enforces current answer matches find precondition."""
+        from backend.main import apply_question_patch
+        test_qid = "622f08d7b70e4b50e4500a1b"
+        wrong_precondition_patch = {
+            "field": "answer",
+            "find": "999",  # not the current answer
+            "replace": "A"
+        }
+        res = apply_question_patch(test_qid, wrong_precondition_patch)
+        self.assertIsNone(res, "apply_question_patch must return None when answer find precondition fails")
+
+    def test_r020_list_format(self):
+        """Verifies R020 edit uses JSON list format for find and replace."""
+        r020 = self.results_by_id.get("R020")
+        self.assertIsNotNone(r020)
+        edit = r020.get("edit")
+        self.assertIsNotNone(edit)
+        self.assertEqual(edit["field"], "answer")
+        self.assertEqual(edit["find"], ["A, B, D"])
+        self.assertEqual(edit["replace"], ["A", "B", "D"])
+
+    def test_all_results_edits_apply_cleanly(self):
+        """Verifies every surgical edit proposed in results.json matches stored content."""
+        for res in self.results:
+            rid = res["reportId"]
+            edit = res.get("edit")
+            if not edit:
+                continue
+            qid = res["questionId"]
+            q = self.questions.get(qid)
+            self.assertIsNotNone(q, f"Report {rid} question {qid} not found")
+            q_type = q.get("questionType", "scq")
+            payload = q.get(q_type, {})
+
+            field = edit.get("field")
+            find_val = edit.get("find")
+
+            if field == "answer":
+                cur_ans = payload.get("answer")
+                self.assertIsNotNone(cur_ans, f"Report {rid} answer field missing")
+                # find must match or replace must already be applied
+                matches_find = (cur_ans == find_val or str(cur_ans).strip() == str(find_val).strip())
+                matches_repl = (cur_ans == edit.get("replace") or str(cur_ans).strip() == str(edit.get("replace")).strip())
+                self.assertTrue(matches_find or matches_repl, f"Report {rid} answer precondition failed: {cur_ans} vs find {find_val}")
+            elif field in ("question", "solution"):
+                text_content = payload.get(field, "")
+                find_str = str(find_val)
+                repl_str = str(edit.get("replace"))
+                in_content = (find_str in text_content or repl_str in text_content)
+                self.assertTrue(in_content, f"Report {rid} {field} find string '{find_str[:30]}' not found in stored text")
+
+    def test_spelling_preserves_numbers(self):
+        """Verifies that spelling repairs never change numerical digits in questions."""
+        for res in self.results:
+            if res.get("repair") == "spelling" and res.get("edit"):
+                edit = res["edit"]
+                find_nums = re.findall(r"\d+", str(edit.get("find", "")))
+                repl_nums = re.findall(r"\d+", str(edit.get("replace", "")))
+                self.assertEqual(
+                    find_nums, repl_nums,
+                    f"Spelling repair in {res['reportId']} altered numerical constants: {find_nums} -> {repl_nums}"
+                )
+
+
+    def test_rbac_subject_isolation(self):
+        """Verifies server-side RBAC enforces subject isolation (Physics prof cannot modify Botany report -> 403)."""
+        from backend.main import approve_fix, ApproveFixRequest
+        from fastapi import HTTPException
+
+        physics_user = {
+            "username": "physics_prof",
+            "name": "Prof A",
+            "role": "professor",
+            "subject": "Physics"
+        }
+
+        # R017 is a Botany report
+        botany_req = ApproveFixRequest(
+            questionId="6208e80a9cb2ab67dac61bd0",
+            reportId="R017",
+            facultyName="Prof A"
+        )
+
+        with self.assertRaises(HTTPException) as cm:
+            approve_fix(botany_req, auth_user=physics_user)
+        self.assertEqual(cm.exception.status_code, 403, "Cross-department approval must yield 403 Forbidden")
+
+
 if __name__ == "__main__":
     unittest.main()

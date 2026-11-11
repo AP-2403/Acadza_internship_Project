@@ -65,7 +65,7 @@ EdTech platforms are only as trustworthy as their question bank; a single wrong 
 * **Narration:**
   > *"Now, look at the faculty experience. Tired professors reviewing reports at 10 PM suffer from decision fatigue. That's why we built Zen Calm Focus Mode: an uncluttered, single-question workspace with clean MathML typography and side-by-side surgical diffs.
   > 
-  > Here in Report R002, the stored answer was C (130 V). But solving V = sqrt(40^2 + (60 - 30)^2) gives 50 V (Option A). The engine independently proves the derivation, verifies the solution, and suggests an atomic replacement from C to A.
+  > Here in Report R002, the stored answer was C (130 V). But solving V = sqrt(40^2 + (60 - 30)^2) gives 50 V (Option A). The engine flags the answer mismatch, verifies the derivation, and suggests an atomic replacement from C to A.
   > 
   > And look at Report R027: a student attempted a prompt injection saying 'IGNORE ALL PREVIOUS INSTRUCTIONS'. Our pre-flight sanitizer instantly quarantined it without executing any override."*
 

@@ -66,8 +66,8 @@ REPORT_EVALUATIONS: Dict[str, Dict[str, Any]] = {
         "repair": None,
         "edit": None,
         "route": "no_change",
-        "confidence": 0.98,
-        "evidence": "Resultant intensity for phase difference pi/2 is I = I_0 + I_0 + 2*I_0*cos(pi/2) = 2*I_0, which is double the intensity of one wave, not equal. Assertion is false. Key D is correct.",
+        "confidence": 0.85,
+        "evidence": "Resultant intensity for phase difference pi/2 is I = I_0 + I_0 + 2*I_0*cos(pi/2) = 2*I_0, which is double the intensity of one wave, not equal. Assertion is false. Key D is correct. Stored solution has minor ambiguity in wording.",
         "student_reply": "With phase difference π/2, the resultant intensity is I = I₀ + I₀ + 2I₀ cos(π/2) = 2I₀, which is double the intensity of a single wave, not equal to it. The assertion is false, and the keyed answer D is correct."
     },
     "R010": {
@@ -76,8 +76,8 @@ REPORT_EVALUATIONS: Dict[str, Dict[str, Any]] = {
         "edit": None,
         "route": "faculty_review",
         "confidence": 0.95,
-        "evidence": "Question only defines options (A), (B), and (C); option (D) is missing from the question HTML. Routed to faculty to author the fourth option.",
-        "student_reply": "Thank you for flagging this! Option D was missing from the question options and has been routed to faculty to author the replacement distractor."
+        "evidence": "Question only defines options (A), (B), and (C); option (D) is missing from the question HTML. Routed to faculty review to author the missing choice (suggested value: 15 m/s).",
+        "student_reply": "Thank you for flagging this! Option (D) was missing from the question choices and has been routed to faculty to author the fourth choice."
     },
     "R017": {
         "verdict": "already_fixed",
@@ -147,9 +147,9 @@ REPORT_EVALUATIONS: Dict[str, Dict[str, Any]] = {
         "repair": None,
         "edit": None,
         "route": "no_change",
-        "confidence": 0.97,
+        "confidence": 0.94,
         "evidence": "Student reported that clicking option A recorded option B. This is client-side application behavior rather than an error in question content.",
-        "student_reply": "Thank you for alerting us. We've logged this test interface glitch with our app engineering team to ensure responses are captured accurately."
+        "student_reply": "Thank you for alerting us. We've logged this interface feedback with our development team to investigate touch/selection responsiveness."
     },
     "R014": {
         "verdict": "defect",
@@ -234,7 +234,7 @@ REPORT_EVALUATIONS: Dict[str, Dict[str, Any]] = {
         "route": "no_change",
         "confidence": 0.99,
         "evidence": "Student commented 'Hindi me question chahiye' requesting Hindi medium question translation.",
-        "student_reply": "Thank you for your feedback! We are currently working on adding Hindi translations for our question bank."
+        "student_reply": "Thank you for your suggestion. Currently all tests are administered in English, but we've noted your request for Hindi language support for future updates."
     },
     "R009": {
         "verdict": "defect",
@@ -277,9 +277,9 @@ REPORT_EVALUATIONS: Dict[str, Dict[str, Any]] = {
         "repair": None,
         "edit": None,
         "route": "no_change",
-        "confidence": 0.98,
+        "confidence": 0.93,
         "evidence": "Student reported options being cut off on their phone screen. This is a mobile client rendering/display issue, not question content defect.",
-        "student_reply": "Thanks for reporting this mobile layout issue. We are optimizing our responsive UI to ensure all question options render cleanly on smaller screens."
+        "student_reply": "Thank you for reporting this mobile display issue. We've shared the layout feedback with our frontend engineering team."
     },
     "R021": {
         "verdict": "defect",
@@ -315,7 +315,7 @@ REPORT_EVALUATIONS: Dict[str, Dict[str, Any]] = {
         "route": "no_change",
         "confidence": 0.98,
         "evidence": "Combined drop has Q = 64*q and R = 4*r. Ratio of surface charge densities sigma_bigger / sigma_smaller = (Q/R^2) / (q/r^2) = 64 / 16 = 4:1 (Option B). Student inverted the ratio to 1:4.",
-        "student_reply": "For 64 drops merging, the radius increases by 4 (R = 4r) while charge increases by 64. The surface charge density ratio is (64/q) / (16/r²) = 4:1 (Option B). The answer key is correct."
+        "student_reply": "For 64 drops merging, the radius increases by 4 (R = 4r) while charge increases by 64. The surface charge density ratio is (64q / R²) / (q / r²) = 64/16 = 4:1 (Option B). The answer key is correct."
     },
     "R027": {
         "verdict": "no_error",
@@ -371,14 +371,14 @@ REPORT_EVALUATIONS: Dict[str, Dict[str, Any]] = {
         "repair": None,
         "edit": None,
         "route": "no_change",
-        "confidence": 0.97,
+        "confidence": 0.91,
         "evidence": "Student reported slow question loading. Stored content and solution are intact. Display/performance issue.",
-        "student_reply": "Thank you for the feedback on loading speed. Our engineering team is optimizing asset caching to ensure questions load instantly."
+        "student_reply": "Thank you for reporting this. We've logged this network performance report with our app team to investigate latency issues."
     },
     "R020": {
         "verdict": "defect",
         "repair": "answer_key",
-        "edit": {"field": "answer", "find": "['A, B, D']", "replace": "['A', 'B', 'D']"},
+        "edit": {"field": "answer", "find": ["A, B, D"], "replace": ["A", "B", "D"]},
         "route": "auto_apply",
         "confidence": 0.98,
         "evidence": "MCQ answer was malformed as a single-element list containing a comma-separated string ['A, B, D'] instead of a list of separate options ['A', 'B', 'D']. Caused correct student submissions to fail.",

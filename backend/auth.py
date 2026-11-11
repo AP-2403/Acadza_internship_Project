@@ -19,27 +19,78 @@ def create_token(username: str) -> str:
 
 
 def store_session(token: str, user: Dict[str, Any]) -> None:
-    """Stores session with creation timestamp for expiration checking."""
+    """Stores session with creation timestamp for expiration checking in memory and SQLite."""
     session_data = dict(user)
-    session_data["created_at"] = time.time()
+    now = time.time()
+    session_data["created_at"] = now
     active_sessions[token] = session_data
+    try:
+        from .database import get_conn
+        conn = get_conn()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT OR REPLACE INTO sessions (token, username, name, role, subject, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            token,
+            user.get("username", ""),
+            user.get("name", user.get("username", "")),
+            user.get("role", "student"),
+            user.get("subject"),
+            now
+        ))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
 
 
 def get_current_user(token: str) -> Optional[Dict[str, Any]]:
-    """Retrieves session user if token is valid and unexpired."""
+    """Retrieves session user if token is valid and unexpired from memory or SQLite."""
     if not token:
         return None
     session = active_sessions.get(token)
-    if not session:
-        return None
-    if time.time() - session.get("created_at", 0) > SESSION_TTL_SECONDS:
-        active_sessions.pop(token, None)
-        return None
-    return session
+    if session:
+        if time.time() - session.get("created_at", 0) > SESSION_TTL_SECONDS:
+            remove_session(token)
+            return None
+        return session
+    try:
+        from .database import get_conn
+        conn = get_conn()
+        cur = conn.cursor()
+        cur.execute("SELECT username, name, role, subject, created_at FROM sessions WHERE token = ?", (token,))
+        row = cur.fetchone()
+        conn.close()
+        if row:
+            if time.time() - row["created_at"] > SESSION_TTL_SECONDS:
+                remove_session(token)
+                return None
+            user_data = {
+                "username": row["username"],
+                "name": row["name"],
+                "role": row["role"],
+                "subject": row["subject"],
+                "created_at": row["created_at"]
+            }
+            active_sessions[token] = user_data
+            return user_data
+    except Exception:
+        pass
+    return None
 
 
 def remove_session(token: str) -> None:
     active_sessions.pop(token, None)
+    try:
+        from .database import get_conn
+        conn = get_conn()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM sessions WHERE token = ?", (token,))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
 
 
 def extract_token(authorization: Optional[str]) -> Optional[str]:

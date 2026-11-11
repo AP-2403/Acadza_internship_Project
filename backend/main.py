@@ -64,17 +64,32 @@ if RESULTS_PATH.exists():
             RESULTS_DATA = json.load(f)
     except Exception:
         pass
-RESULTS_BY_QID: Dict[str, Dict[str, Any]] = {r["questionId"]: r for r in RESULTS_DATA if r.get("questionId")}
 RESULTS_BY_RID: Dict[str, Dict[str, Any]] = {r["reportId"]: r for r in RESULTS_DATA if r.get("reportId")}
+RESULTS_LIST_BY_QID: Dict[str, List[Dict[str, Any]]] = {}
+for r in RESULTS_DATA:
+    qid = r.get("questionId")
+    if qid:
+        RESULTS_LIST_BY_QID.setdefault(qid, []).append(r)
 
-def apply_question_patch(question_id: str, edit: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+RESULTS_BY_QID: Dict[str, Dict[str, Any]] = {}
+for qid, res_list in RESULTS_LIST_BY_QID.items():
+    with_edit = [r for r in res_list if r.get("edit")]
+    RESULTS_BY_QID[qid] = with_edit[0] if with_edit else res_list[0]
+
+def apply_question_patch(
+    question_id: str,
+    edit: Optional[Dict[str, Any]],
+    actor: Optional[str] = "faculty",
+    repair_type: Optional[str] = None
+) -> Optional[Dict[str, Any]]:
     """
     Applies surgical { field, find, replace } patch to the question:
-    - answer: updates answer key for SCQ, MCQ, or Integer question
-    - question: updates question stem (e.g. adding missing unit '(in N)', repairing typos)
-    - solution: updates derivation or removes stray MathML
-    - questionType: corrects question type (e.g. mcq -> scq), migrating payload
-    Strictly idempotent: will not re-apply if already applied, and fails cleanly if find text is absent.
+    - answer: updates answer key for SCQ, MCQ, or Integer question (verifies find precondition)
+    - question: updates question stem (requires find to match exactly once)
+    - solution: updates derivation or removes stray MathML (requires find to match exactly once)
+    - questionType: corrects question type (e.g. mcq -> scq), cleanly migrating payload
+    Strictly idempotent: returns question on repeat calls, and returns None (failing cleanly) if find precondition fails.
+    Appends audit record to question's errorHistory.
     """
     global QUESTIONS_DATA, QUESTIONS_MAP
     q = QUESTIONS_MAP.get(question_id)
@@ -97,6 +112,11 @@ def apply_question_patch(question_id: str, edit: Optional[Dict[str, Any]]) -> Op
     if field == "questionType":
         old_type = q.get("questionType", "mcq")
         new_type = str(replace_val).strip()
+        if old_type == new_type:
+            return q
+        if find_val and old_type != str(find_val).strip():
+            return None
+
         if old_type in q and old_type != new_type:
             payload = q.pop(old_type)
             if new_type == "scq" and isinstance(payload.get("answer"), list):
@@ -108,49 +128,68 @@ def apply_question_patch(question_id: str, edit: Optional[Dict[str, Any]]) -> Op
         q["questionType"] = new_type
 
     elif field == "answer":
+        cur_ans = target_payload.get("answer")
         if q_type == "mcq":
-            if isinstance(replace_val, list):
-                target_payload["answer"] = replace_val
-            elif isinstance(replace_val, str) and replace_val.strip().startswith("["):
-                try:
-                    import ast
-                    target_payload["answer"] = ast.literal_eval(replace_val)
-                except Exception:
-                    target_payload["answer"] = [x.strip(" '\"") for x in replace_val.strip("[]").split(",") if x.strip()]
-            else:
-                target_payload["answer"] = [str(replace_val).strip()]
+            target_list = replace_val if isinstance(replace_val, list) else [str(replace_val).strip()]
+            if cur_ans == target_list:
+                return q
+            if find_val is not None:
+                expected_find = find_val if isinstance(find_val, list) else [str(find_val).strip()]
+                if cur_ans != expected_find:
+                    return None
+            target_payload["answer"] = target_list
         else:
-            target_payload["answer"] = str(replace_val).strip()
+            target_str = str(replace_val).strip()
+            if str(cur_ans).strip() == target_str:
+                return q
+            if find_val is not None and str(cur_ans).strip() != str(find_val).strip():
+                return None
+            target_payload["answer"] = target_str
 
     elif field == "question":
         current_q = target_payload.get("question", "")
-        if not find_val:
+        if find_val is None:
             return None
-        # Idempotence: if replace_val is already present, do not re-apply
-        if replace_val in current_q:
+        find_str = str(find_val)
+        repl_str = str(replace_val)
+        if repl_str in current_q:
             return q
-        if find_val in current_q:
-            target_payload["question"] = current_q.replace(find_val, replace_val)
-        elif find_val.strip() in current_q:
-            target_payload["question"] = current_q.replace(find_val.strip(), replace_val.strip())
+
+        cnt = current_q.count(find_str)
+        if cnt == 1:
+            target_payload["question"] = current_q.replace(find_str, repl_str)
+        elif cnt == 0 and current_q.count(find_str.strip()) == 1:
+            target_payload["question"] = current_q.replace(find_str.strip(), repl_str.strip())
         else:
-            # find_val is not in question; do not append blindly!
-            print(f"Warning: patch find string not found in question {question_id}")
+            # 0 occurrences or ambiguous (>1 occurrences)
             return None
 
     elif field == "solution":
         current_s = target_payload.get("solution", "")
-        if not find_val:
+        if find_val is None:
             return None
-        if replace_val in current_s:
+        find_str = str(find_val)
+        repl_str = str(replace_val)
+        if repl_str in current_s:
             return q
-        if find_val in current_s:
-            target_payload["solution"] = current_s.replace(find_val, replace_val)
-        elif find_val.strip() in current_s:
-            target_payload["solution"] = current_s.replace(find_val.strip(), replace_val.strip())
+
+        cnt = current_s.count(find_str)
+        if cnt == 1:
+            target_payload["solution"] = current_s.replace(find_str, repl_str)
+        elif cnt == 0 and current_s.count(find_str.strip()) == 1:
+            target_payload["solution"] = current_s.replace(find_str.strip(), repl_str.strip())
         else:
-            print(f"Warning: patch find string not found in solution {question_id}")
             return None
+
+    # Append to immutable errorHistory
+    hist = q.setdefault("errorHistory", [])
+    note_str = f"'{find_val}' -> '{replace_val}'" if find_val is not None else f"Set {field} to {replace_val}"
+    hist.append({
+        "type": repair_type or f"Patch {field}",
+        "actor": actor or "faculty",
+        "at": datetime.now(timezone.utc).isoformat(),
+        "note": note_str
+    })
 
     q["updatedAt"] = datetime.now(timezone.utc).isoformat()
 
@@ -168,6 +207,8 @@ def apply_question_patch(question_id: str, edit: Optional[Dict[str, Any]]) -> Op
                 json.dump(QUESTIONS_DATA, f, indent=2, ensure_ascii=False)
     except Exception as e:
         pass
+
+    return q
 
     return q
 
@@ -463,6 +504,8 @@ def submit_test(req: SubmitTestRequest):
 def submit_feedback(req: StudentFeedbackRequest):
     if not req.comment or not req.comment.strip():
         raise HTTPException(status_code=400, detail="Comment cannot be empty")
+    if len(req.comment) > 2000:
+        raise HTTPException(status_code=400, detail="Comment exceeds maximum limit of 2000 characters")
 
     q = QUESTIONS_MAP.get(req.questionId)
     if not q:
@@ -476,11 +519,11 @@ def submit_feedback(req: StudentFeedbackRequest):
     known_eval = RESULTS_BY_QID.get(req.questionId)
     triage = triage_student_doubt(q, req.comment.strip(), known_eval)
 
-    report_route = triage.get("route", "auto_apply")
+    report_route = triage.get("route", "faculty_review")
     report_verdict = triage.get("verdict", "defect")
     report_repair = triage.get("repair", "answer_key")
     report_edit_json = json.dumps(triage["edit"]) if triage.get("edit") else None
-    report_confidence = float(triage.get("confidence", 0.98))
+    report_confidence = float(triage.get("confidence", 0.90))
     report_evidence = triage.get("evidence", "Agent verified mathematical derivation.")
     report_reply = triage.get("student_reply", f"Your doubt has been received by the {subj} faculty and is currently being reviewed.")
 
@@ -532,20 +575,26 @@ def submit_feedback(req: StudentFeedbackRequest):
     }
 
 @app.get("/api/student/my-doubts")
-def get_student_doubts(studentId: Optional[str] = "student"):
+def get_student_doubts(
+    studentId: Optional[str] = "student",
+    authorization: Optional[str] = Header(None)
+):
     """
-    Returns all doubts and faculty responses for the student.
+    Returns all doubts and faculty responses for the authenticated student.
     Includes verification verdict, faculty explanation, and question details.
     """
+    token = extract_token(authorization)
+    auth_user = get_current_user(token) if token else None
+    effective_student = auth_user["username"] if auth_user and auth_user.get("role") == "student" else (studentId or "student")
+
     conn = get_conn()
     cur = conn.cursor()
 
-    # Fetch reports for this student or web portal doubts
     cur.execute("""
         SELECT * FROM reports 
-        WHERE student_id = ? OR source = 'student_test_portal'
+        WHERE student_id = ?
         ORDER BY reported_at DESC
-    """, (studentId,))
+    """, (effective_student,))
     rows = cur.fetchall()
     conn.close()
 
@@ -605,12 +654,14 @@ def reply_to_student(req: ProfessorReplyRequest, auth_user: dict = Depends(requi
         raise HTTPException(status_code=403, detail=f"Forbidden: You are assigned to {user_subject}, cannot modify {rep_subject} report")
 
     now_iso = datetime.now(timezone.utc).isoformat()
-    new_status = "auto_applied" if req.verdict == "error_verified" else "reviewed"
-    new_route = "auto_apply" if req.verdict == "error_verified" else "no_change"
+    is_defect = req.verdict in ("error_verified", "defect")
+    new_verdict = "defect" if is_defect else "no_error"
+    new_status = "auto_applied" if is_defect else "reviewed"
+    new_route = "auto_apply" if is_defect else "no_change"
     faculty_display = auth_user.get("name") or req.facultyName or "Prof A"
 
     # If student is verified correct, automatically patch the question if an edit is found
-    if req.verdict == "error_verified":
+    if is_defect:
         qid = row["question_id"]
         edit = None
         if row["edit_json"]:
@@ -623,7 +674,7 @@ def reply_to_student(req: ProfessorReplyRequest, auth_user: dict = Depends(requi
             if res and res.get("edit"):
                 edit = res["edit"]
         if edit:
-            apply_question_patch(qid, edit)
+            apply_question_patch(qid, edit, actor=auth_user.get("username", faculty_display))
 
     cur.execute("""
         UPDATE reports
@@ -634,7 +685,7 @@ def reply_to_student(req: ProfessorReplyRequest, auth_user: dict = Depends(requi
             faculty_name = ?,
             resolved_at = ?
         WHERE report_id = ?
-    """, (req.replyText.strip(), req.verdict, new_status, new_route, faculty_display, now_iso, req.reportId))
+    """, (req.replyText.strip(), new_verdict, new_status, new_route, faculty_display, now_iso, req.reportId))
 
     conn.commit()
     conn.close()
@@ -770,71 +821,101 @@ def professor_action(req: ProfessorActionRequest, auth_user: dict = Depends(requ
 @app.post("/api/professor/approve-fix")
 def approve_fix(req: ApproveFixRequest, auth_user: dict = Depends(require_faculty_or_admin)):
     """
-    Faculty reviews and approves a fix for a question:
-    - If answer marked as correct is wrong: updates answer key.
-    - If unit missing in integer question or stem typo: updates question stem.
-    - Persists updated question to question bank and updates report status to auto_applied.
-    - Removes report from active review queue.
+    Faculty reviews and approves a fix for a report/question:
+    - If edit is present: applies surgical patch via apply_question_patch.
+    - If patch precondition fails: returns 409 Conflict without modifying report.
+    - If edit-less defect: routes to reviewed/faculty_review without false claims.
+    - Preserves pedagogically drafted student reply instead of canned templates.
+    - Enforces closed taxonomy verdict 'defect'.
     """
     conn = get_conn()
     cur = conn.cursor()
 
-    # Access control: check subject
+    target_report = None
     if req.reportId:
-        cur.execute("SELECT question_id, subject FROM reports WHERE report_id = ?", (req.reportId,))
-        row = cur.fetchone()
-        if row:
-            rep_subject = row["subject"]
-            user_subject = auth_user.get("subject")
-            if auth_user.get("role") == "professor" and user_subject and user_subject.lower() != rep_subject.lower():
-                conn.close()
-                raise HTTPException(status_code=403, detail=f"Forbidden: You are assigned to {user_subject}, cannot modify {rep_subject} report")
+        cur.execute("SELECT * FROM reports WHERE report_id = ?", (req.reportId,))
+        target_report = cur.fetchone()
+        if not target_report:
+            conn.close()
+            raise HTTPException(status_code=404, detail=f"Report '{req.reportId}' not found")
+        rep_subject = target_report["subject"]
+        user_subject = auth_user.get("subject")
+        if auth_user.get("role") == "professor" and user_subject and user_subject.lower() != rep_subject.lower():
+            conn.close()
+            raise HTTPException(status_code=403, detail=f"Forbidden: You are assigned to {user_subject}, cannot modify {rep_subject} report")
+    else:
+        cur.execute("SELECT * FROM reports WHERE question_id = ? ORDER BY reported_at ASC", (req.questionId,))
+        target_report = cur.fetchone()
 
     edit_to_apply = req.edit
+    if not edit_to_apply and target_report and target_report["edit_json"]:
+        try:
+            edit_to_apply = json.loads(target_report["edit_json"])
+        except Exception:
+            pass
     if not edit_to_apply:
-        res = RESULTS_BY_QID.get(req.questionId) or (RESULTS_BY_RID.get(req.reportId) if req.reportId else None)
+        res = (RESULTS_BY_RID.get(req.reportId) if req.reportId else None) or RESULTS_BY_QID.get(req.questionId)
         if res and res.get("edit"):
             edit_to_apply = res["edit"]
 
-    # 1. Apply surgical patch to question in memory and questions.json
-    updated_q = apply_question_patch(req.questionId, edit_to_apply)
-    if not updated_q:
-        conn.close()
-        raise HTTPException(status_code=404, detail=f"Question '{req.questionId}' not found in question bank")
-
-    # 2. Update SQLite reports table surgically for target report only
     now_iso = datetime.now(timezone.utc).isoformat()
     faculty_display = auth_user.get("name") or req.facultyName or "Prof A"
-    reply_msg = (
-        f"Correction confirmed! {faculty_display} reviewed your feedback and approved the fix. "
-        "The question and answer key have been updated in our question bank."
-    )
-    edit_str = json.dumps(edit_to_apply) if edit_to_apply else None
+    repair_type = target_report["repair"] if target_report else "Question repair"
 
-    if req.reportId:
+    updated_q = None
+    if edit_to_apply:
+        updated_q = apply_question_patch(
+            req.questionId,
+            edit_to_apply,
+            actor=auth_user.get("username", faculty_display),
+            repair_type=repair_type
+        )
+        if not updated_q:
+            conn.close()
+            raise HTTPException(
+                status_code=409,
+                detail=f"Precondition failed: Patch 'find' pattern did not match question '{req.questionId}' exactly once. Report status untouched."
+            )
+        new_status = "auto_applied"
+        new_route = "auto_apply"
+    else:
+        new_status = "reviewed"
+        new_route = "faculty_review"
+
+    if req.comment:
+        reply_msg = req.comment
+    elif target_report and target_report["student_reply"]:
+        reply_msg = target_report["student_reply"]
+    else:
+        reply_msg = f"Feedback reviewed by {faculty_display}. The defect has been queued and validated."
+
+    edit_str = json.dumps(edit_to_apply) if edit_to_apply else None
+    target_rid = target_report["report_id"] if target_report else req.reportId
+
+    if target_rid:
         cur.execute("""
             UPDATE reports
-            SET status = 'auto_applied',
-                route = 'auto_apply',
-                verdict = 'error_verified',
+            SET status = ?,
+                route = ?,
+                verdict = 'defect',
                 faculty_name = ?,
                 resolved_at = ?,
                 student_reply = ?,
                 edit_json = COALESCE(?, edit_json)
             WHERE report_id = ?
-        """, (faculty_display, now_iso, reply_msg, edit_str, req.reportId))
+        """, (new_status, new_route, faculty_display, now_iso, reply_msg, edit_str, target_rid))
     else:
         cur.execute("""
             UPDATE reports
-            SET status = 'auto_applied',
-                route = 'auto_apply',
-                verdict = 'error_verified',
+            SET status = ?,
+                route = ?,
+                verdict = 'defect',
                 faculty_name = ?,
                 resolved_at = ?,
                 student_reply = ?,
                 edit_json = COALESCE(?, edit_json)
             WHERE question_id = ?
-        """, (faculty_display, now_iso, reply_msg, edit_str, req.questionId))
+        """, (new_status, new_route, faculty_display, now_iso, reply_msg, edit_str, req.questionId))
 
     conn.commit()
     conn.close()
@@ -842,62 +923,76 @@ def approve_fix(req: ApproveFixRequest, auth_user: dict = Depends(require_facult
     record_audit_event(
         action="approve_fix",
         actor=auth_user.get("username", faculty_display),
-        target_type="report" if req.reportId else "question",
-        target_id=req.reportId or req.questionId,
+        target_type="report" if target_rid else "question",
+        target_id=target_rid or req.questionId,
         details={"question_id": req.questionId, "edit": edit_to_apply}
     )
 
     return {
         "success": True,
         "questionId": req.questionId,
-        "reportId": req.reportId,
-        "updatedQuestion": extract_question_details(updated_q),
+        "reportId": target_rid,
+        "newStatus": new_status,
+        "newRoute": new_route,
+        "updatedQuestion": extract_question_details(updated_q) if updated_q else None,
         "editApplied": edit_to_apply,
-        "message": "Question patched and updated! Feedback removed from review queue."
+        "message": "Fix approved and recorded! Feedback removed from review queue."
     }
 
 @app.post("/api/professor/reject-report")
 def reject_report(req: RejectReportRequest, auth_user: dict = Depends(require_faculty_or_admin)):
     """
     Faculty rejects/dismisses report after confirming the question is sound.
+    Enforces closed taxonomy verdict 'no_error'.
     """
     conn = get_conn()
     cur = conn.cursor()
 
+    target_report = None
     if req.reportId:
-        cur.execute("SELECT question_id, subject FROM reports WHERE report_id = ?", (req.reportId,))
-        row = cur.fetchone()
-        if row:
-            rep_subject = row["subject"]
-            user_subject = auth_user.get("subject")
-            if auth_user.get("role") == "professor" and user_subject and user_subject.lower() != rep_subject.lower():
-                conn.close()
-                raise HTTPException(status_code=403, detail=f"Forbidden: You are assigned to {user_subject}, cannot modify {rep_subject} report")
+        cur.execute("SELECT * FROM reports WHERE report_id = ?", (req.reportId,))
+        target_report = cur.fetchone()
+        if not target_report:
+            conn.close()
+            raise HTTPException(status_code=404, detail=f"Report '{req.reportId}' not found")
+        rep_subject = target_report["subject"]
+        user_subject = auth_user.get("subject")
+        if auth_user.get("role") == "professor" and user_subject and user_subject.lower() != rep_subject.lower():
+            conn.close()
+            raise HTTPException(status_code=403, detail=f"Forbidden: You are assigned to {user_subject}, cannot modify {rep_subject} report")
+    else:
+        cur.execute("SELECT * FROM reports WHERE question_id = ? ORDER BY reported_at ASC", (req.questionId,))
+        target_report = cur.fetchone()
 
     now_iso = datetime.now(timezone.utc).isoformat()
     faculty_display = auth_user.get("name") or req.facultyName or "Prof A"
-    reply_msg = (
-        f"Thank you for your feedback. {faculty_display} checked the question formulation and official derivation. "
-        f"The question is sound and verified correct. Note: {req.reason or 'No defect found.'}"
-    )
+    
+    if req.reason:
+        reply_msg = f"Feedback reviewed by {faculty_display}. {req.reason}"
+    elif target_report and target_report["student_reply"]:
+        reply_msg = target_report["student_reply"]
+    else:
+        reply_msg = f"Thank you for your feedback. {faculty_display} verified the official formulation and derivation: question is sound."
 
-    if req.reportId:
+    target_rid = target_report["report_id"] if target_report else req.reportId
+
+    if target_rid:
         cur.execute("""
             UPDATE reports
             SET status = 'dismissed',
                 route = 'no_change',
-                verdict = 'concept_sound',
+                verdict = 'no_error',
                 faculty_name = ?,
                 resolved_at = ?,
                 student_reply = ?
             WHERE report_id = ?
-        """, (faculty_display, now_iso, reply_msg, req.reportId))
+        """, (faculty_display, now_iso, reply_msg, target_rid))
     else:
         cur.execute("""
             UPDATE reports
             SET status = 'dismissed',
                 route = 'no_change',
-                verdict = 'concept_sound',
+                verdict = 'no_error',
                 faculty_name = ?,
                 resolved_at = ?,
                 student_reply = ?
@@ -910,16 +1005,18 @@ def reject_report(req: RejectReportRequest, auth_user: dict = Depends(require_fa
     record_audit_event(
         action="reject_report",
         actor=auth_user.get("username", faculty_display),
-        target_type="report" if req.reportId else "question",
-        target_id=req.reportId or req.questionId,
+        target_type="report" if target_rid else "question",
+        target_id=target_rid or req.questionId,
         details={"question_id": req.questionId, "reason": req.reason}
     )
 
     return {
         "success": True,
         "questionId": req.questionId,
-        "reportId": req.reportId,
-        "message": "Report dismissed and marked sound."
+        "reportId": target_rid,
+        "newStatus": "dismissed",
+        "newRoute": "no_change",
+        "message": "Report dismissed as no_error."
     }
 
 @app.post("/api/professor/ai-assist")

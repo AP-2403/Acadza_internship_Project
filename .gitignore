@@ -21,6 +21,7 @@ venv/
 ENV/
 backend_venv/
 *.db
+!backend/acadza.db
 
 # Environment and IDE
 .env

@@ -11,7 +11,7 @@ Simultaneously, **faculties lose cognitive stamina**: reviewing dozens of unstru
 1. **Immediate AI Pre-Triage:** Newly reported doubts arrive pre-evaluated with mathematical derivation proofs, surgical diffs, and drafted pedagogical replies ready for 1-click faculty sign-off.
 2. **🧘 Zen Calm Focus Mode for Faculties:** Rather than overwhelming tired professors with crowded data tables, our console defaults to an uncluttered single-question view with large, soothing action buttons and smooth keyboard glide (`J`/`K`).
 3. **Voice & AI Co-Pilot with Formula Sanity:** Faculties can speak their explanation naturally; the agent sanity-checks mathematical formulas (e.g. series LCR phasor theory, flux) to prevent fatigue-induced slips before dispatch.
-4. **Empathetic, Transparent Student Replies:** We never send canned bot responses. If the key was wrong, we validate their effort and immediately unblock their score; if they were wrong, we gently explain the conceptual trap.
+4. **Empathetic, Contextual Student Replies:** We avoid canned robotic templates. For verified defects, our system drafts context-specific derivations explaining the correction; for student misconceptions, it details the conceptual trap without dismissive phrasing.
 5. **Dean Department Segmentation:** Institutional leaders can segment triage queues and live doubt feeds by subject (Physics, Zoology, Botany) with live counters to isolate department backlogs and ensure SLA adherence without cognitive clutter.
 
 ---
@@ -41,7 +41,7 @@ We strictly enforce a deterministic safety boundary where the AI is prohibited f
 ## 4. One Idea Beyond This Brief We Pitch to Acadza
 **"Telemetry-Driven Ghost Defect Miner" (Zero-Report Defect Detection)**
 
-Students only report ~5% of broken questions; 95% suffer in silence or assume they are at fault. We propose mining real-time test attempt telemetry across Acadza’s 8 lakh question bank:
+Empirical EdTech studies suggest students flag only ~5–10% of discrepancies they encounter; the vast majority suffer in silence or assume they made a calculation error. We propose mining real-time test attempt telemetry across Acadza’s 8 lakh question bank:
 - **Top-Decile Inversion Anomaly:** When the top 10% highest-scoring students consistently select Option A, but the answer key is Option C, the system flags the question as a key defect with 99% probability before any student complains.
 - **Dwell Time Outliers:** If average solve time on an "EASY" question is 4.5 minutes instead of 1 minute, it indicates missing parameters or corrupted rendering.
 - **Negative Point-Biserial Discrimination ($r_{pbi} < -0.2$):** High scorers get the question wrong more often than low scorers—a mathematical fingerprint of ambiguous phrasing or erroneous keys.

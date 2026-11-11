@@ -76,8 +76,33 @@ def run():
     for r, c in sorted(stats["repairs"].items(), key=lambda x: -x[1]):
         print(f"  - {r:18s}: {c:2d} reports")
 
+    from engine.guardrails import validate_and_enforce_guardrails
+    from engine.models import ReportResult
+
+    guardrails_checked = len(results)
+    guardrails_passed = 0
+    total_warnings = 0
+
+    for r in results:
+        res_obj = ReportResult(
+            reportId=r["reportId"],
+            questionId=r["questionId"],
+            verdict=r["verdict"],
+            repair=r.get("repair"),
+            edit=r.get("edit"),
+            route=r["route"],
+            confidence=r["confidence"],
+            evidence=r["evidence"],
+            student_reply=r["student_reply"]
+        )
+        _, warns = validate_and_enforce_guardrails(res_obj)
+        if len(warns) == 0:
+            guardrails_passed += 1
+        else:
+            total_warnings += len(warns)
+
     print("=" * 70)
-    print("ALL GUARDRAILS & PERMISSION CHECKS PASSED: 100% COMPLIANT")
+    print(f"TAXONOMY & SAFETY GUARDRAILS AUDIT: {guardrails_passed}/{guardrails_checked} evaluations clean ({total_warnings} warnings)")
     print("=" * 70)
 
 
