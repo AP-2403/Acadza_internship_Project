@@ -225,9 +225,46 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
     };
   }, [groups]);
 
+  // Subject breakdown counts for Dean filtering & Navbar indicators
+  const subjectBreakdown = useMemo(() => {
+    const counts = {
+      all: allGroups.length,
+      physics: 0,
+      zoology: 0,
+      botany: 0,
+      physicsReview: 0,
+      zoologyReview: 0,
+      botanyReview: 0,
+    };
+    allGroups.forEach((g) => {
+      const sub = (g.question.subject || '').toLowerCase();
+      const needsRev = g.primaryResult.route === 'faculty_review';
+      if (sub === 'physics') {
+        counts.physics++;
+        if (needsRev) counts.physicsReview++;
+      } else if (sub === 'zoology') {
+        counts.zoology++;
+        if (needsRev) counts.zoologyReview++;
+      } else if (sub === 'botany') {
+        counts.botany++;
+        if (needsRev) counts.botanyReview++;
+      }
+    });
+    return counts;
+  }, [allGroups]);
+
+  // Department-filtered doubts (for Dean segmentation and Faculty subject scoping)
+  const departmentDoubts = useMemo(() => {
+    const activeSubject = user.role === 'admin' ? selectedSubject : user.subject;
+    if (activeSubject && activeSubject.toLowerCase() !== 'all') {
+      return liveDoubts.filter((d) => d.subject?.toLowerCase() === activeSubject.toLowerCase());
+    }
+    return liveDoubts;
+  }, [liveDoubts, user, selectedSubject]);
+
   // Filtered & Sorted Live Doubts
   const filteredAndSortedDoubts = useMemo(() => {
-    let list = [...liveDoubts];
+    let list = [...departmentDoubts];
 
     // Status filter
     if (doubtsFilter === 'pending') {
@@ -246,7 +283,7 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
     });
 
     return list;
-  }, [liveDoubts, doubtsFilter, doubtsSort]);
+  }, [departmentDoubts, doubtsFilter, doubtsSort]);
 
   // Modal speech dictation and AI assist state
   const [isModalRecording, setIsModalRecording] = useState(false);
@@ -587,7 +624,100 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
         onLogout={onLogout}
         selectedSubject={selectedSubject}
         onSubjectChange={(sub) => setSelectedSubject(sub)}
+        subjectCounts={subjectBreakdown}
       />
+
+      {/* Dean Department Segmentation Control Bar */}
+      {user?.role === 'admin' && (
+        <div className="bg-slate-900 border-b border-slate-800 text-white px-6 py-2 flex flex-wrap items-center justify-between gap-3 shadow-inner">
+          <div className="flex items-center gap-2">
+            <span className="text-sm">🏛️</span>
+            <span className="text-xs font-bold text-slate-100">Dean Department Segmentation:</span>
+            <span className="text-[11px] text-slate-400 hidden lg:inline">
+              Filter triage and doubts across academic faculties
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 bg-slate-800 p-1 rounded-lg border border-slate-700">
+            <button
+              type="button"
+              onClick={() => setSelectedSubject('all')}
+              className={`px-3 py-1 rounded text-xs font-bold flex items-center gap-1.5 transition-all ${
+                selectedSubject === 'all'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-700/60'
+              }`}
+            >
+              <span>🌐 All Departments</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                selectedSubject === 'all' ? 'bg-blue-700 text-white' : 'bg-slate-900 text-slate-300'
+              }`}>
+                {subjectBreakdown.all}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedSubject('Physics')}
+              className={`px-3 py-1 rounded text-xs font-bold flex items-center gap-1.5 transition-all ${
+                selectedSubject === 'Physics'
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-700/60'
+              }`}
+            >
+              <span>⚛️ Physics</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                selectedSubject === 'Physics' ? 'bg-purple-700 text-white' : 'bg-slate-900 text-slate-300'
+              }`}>
+                {subjectBreakdown.physics}
+              </span>
+              {subjectBreakdown.physicsReview > 0 && (
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" title={`${subjectBreakdown.physicsReview} need review`} />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedSubject('Zoology')}
+              className={`px-3 py-1 rounded text-xs font-bold flex items-center gap-1.5 transition-all ${
+                selectedSubject === 'Zoology'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-700/60'
+              }`}
+            >
+              <span>🧬 Zoology</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                selectedSubject === 'Zoology' ? 'bg-emerald-700 text-white' : 'bg-slate-900 text-slate-300'
+              }`}>
+                {subjectBreakdown.zoology}
+              </span>
+              {subjectBreakdown.zoologyReview > 0 && (
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" title={`${subjectBreakdown.zoologyReview} need review`} />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedSubject('Botany')}
+              className={`px-3 py-1 rounded text-xs font-bold flex items-center gap-1.5 transition-all ${
+                selectedSubject === 'Botany'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-700/60'
+              }`}
+            >
+              <span>🌿 Botany</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                selectedSubject === 'Botany' ? 'bg-amber-700 text-white' : 'bg-slate-900 text-slate-300'
+              }`}>
+                {subjectBreakdown.botany}
+              </span>
+              {subjectBreakdown.botanyReview > 0 && (
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" title={`${subjectBreakdown.botanyReview} need review`} />
+              )}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Mode Subheader Bar */}
       <div className="bg-white border-b border-slate-200 px-6 py-2 flex items-center justify-between">
@@ -616,7 +746,7 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
               }`}
             >
               <MessageSquare className="w-3.5 h-3.5" />
-              <span>Student Doubts ({liveDoubts.length})</span>
+              <span>Student Doubts ({departmentDoubts.length})</span>
             </button>
           </div>
 
@@ -667,7 +797,7 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
           <div className="text-xs text-slate-500 font-medium flex items-center gap-1.5 border-l border-slate-200 pl-3">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>
-              Queue: <strong>{user.subject ? `${user.subject} Dept` : selectedSubject}</strong>
+              Queue: <strong>{user.subject ? `${user.subject} Dept` : (selectedSubject === 'all' ? 'All Departments' : `${selectedSubject} Dept`)}</strong>
             </span>
           </div>
         </div>
@@ -714,7 +844,7 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
                 <CheckCircle2 className="w-12 h-12 text-slate-300 mb-2" />
                 <h3 className="text-sm font-bold text-slate-600">All caught up! Zero questions awaiting review</h3>
                 <p className="text-xs text-slate-400 max-w-sm mt-1">
-                  Every student report for {user.subject || selectedSubject} has been verified and resolved.
+                  Every student report for {user.subject ? `${user.subject} Dept` : (selectedSubject === 'all' ? 'all departments' : `${selectedSubject} Dept`)} has been verified and resolved.
                 </p>
               </div>
             )}
@@ -786,7 +916,7 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
                   <CheckCircle2 className="w-12 h-12 text-slate-300 mb-2" />
                   <h3 className="text-sm font-bold text-slate-600">No questions in this subject queue</h3>
                   <p className="text-xs text-slate-400 max-w-sm mt-1">
-                    All reports for {user.subject || selectedSubject} have either been resolved or no new reports match the active filter.
+                    All reports for {user.subject ? `${user.subject} Dept` : (selectedSubject === 'all' ? 'all departments' : `${selectedSubject} Dept`)} have either been resolved or no new reports match the active filter.
                   </p>
                 </div>
               )}
@@ -801,7 +931,7 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
             <div>
               <h2 className="text-xl font-bold text-slate-900">
-                Student Doubts & Explanations ({user.subject || selectedSubject})
+                Student Doubts & Explanations ({user.subject ? `${user.subject} Dept` : (selectedSubject === 'all' ? 'All Departments' : `${selectedSubject} Dept`)})
               </h2>
               <p className="text-xs text-slate-500">
                 Sorted by student arrival timestamp across status separations.
@@ -826,10 +956,10 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
               <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">Status:</span>
               <div className="inline-flex p-0.5 bg-slate-100 rounded-lg">
                 {[
-                  { id: 'all', label: `All (${liveDoubts.length})` },
-                  { id: 'pending', label: `Review (${liveDoubts.filter(d => d.status === 'pending').length})` },
-                  { id: 'auto_applied', label: `Auto (${liveDoubts.filter(d => d.status === 'auto_applied').length})` },
-                  { id: 'reviewed', label: `Dismissed (${liveDoubts.filter(d => d.status === 'reviewed' || d.status === 'dismissed').length})` },
+                  { id: 'all', label: `All (${departmentDoubts.length})` },
+                  { id: 'pending', label: `Needs Reply (${departmentDoubts.filter(d => d.status === 'pending').length})` },
+                  { id: 'auto_applied', label: `Auto-Resolved (${departmentDoubts.filter(d => d.status === 'auto_applied').length})` },
+                  { id: 'reviewed', label: `Replied / Closed (${departmentDoubts.filter(d => d.status === 'reviewed' || d.status === 'dismissed').length})` },
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -912,7 +1042,12 @@ export const FacultyTriageConsole: React.FC<FacultyTriageConsoleProps> = ({ user
                           <span className="text-[10px] font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
                             QID: {doubt.questionId.slice(0, 10)}...
                           </span>
-                          <span className="text-[10px] font-semibold bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                            doubt.subject?.toLowerCase() === 'physics' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                            doubt.subject?.toLowerCase() === 'zoology' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                            doubt.subject?.toLowerCase() === 'botany' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                            'bg-blue-50 text-blue-700 border-blue-200'
+                          }`}>
                             {doubt.subject}
                           </span>
                           <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">

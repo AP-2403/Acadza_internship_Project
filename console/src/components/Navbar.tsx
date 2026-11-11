@@ -25,6 +25,12 @@ interface NavbarProps {
   onLogout?: () => void;
   selectedSubject?: string;
   onSubjectChange?: (subject: string) => void;
+  subjectCounts?: {
+    all: number;
+    physics: number;
+    zoology: number;
+    botany: number;
+  };
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -35,7 +41,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   user,
   onLogout,
   selectedSubject,
-  onSubjectChange
+  onSubjectChange,
+  subjectCounts
 }) => {
   const getInitials = (name?: string) => {
     if (!name) return 'PR';
@@ -66,7 +73,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                   user.subject === 'Botany' ? 'bg-amber-100 text-amber-800' :
                   'bg-slate-800 text-white'
                 }`}>
-                  {user.subject ? `${user.subject} Dept` : 'Admin (All)'}
+                  {user.subject
+                    ? `${user.subject} Dept`
+                    : user.role === 'admin'
+                    ? selectedSubject && selectedSubject !== 'all'
+                      ? `Dean (${selectedSubject})`
+                      : 'Dean (All Depts)'
+                    : 'Admin'}
                 </span>
               )}
             </div>
@@ -77,17 +90,18 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Center: Live Stats Badges & Subject Switcher for Admin */}
         <div className="hidden md:flex items-center space-x-2 text-xs">
           {user?.role === 'admin' && onSubjectChange && (
-            <div className="flex items-center gap-1.5 mr-2">
-              <span className="text-[11px] font-bold text-slate-500">Subject:</span>
+            <div className="flex items-center gap-1.5 mr-2 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">
+              <span className="text-[11px] font-bold text-slate-500">Dept:</span>
               <select
                 value={selectedSubject || 'all'}
                 onChange={(e) => onSubjectChange(e.target.value)}
-                className="text-xs font-semibold bg-slate-50 border border-slate-300 rounded-md px-2 py-1 text-slate-700"
+                className="text-xs font-semibold bg-white border border-slate-300 rounded px-2 py-0.5 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                aria-label="Filter queue by department"
               >
-                <option value="all">All Subjects (44)</option>
-                <option value="Physics">Physics (35)</option>
-                <option value="Zoology">Zoology (5)</option>
-                <option value="Botany">Botany (4)</option>
+                <option value="all">All Departments ({subjectCounts?.all ?? stats.total})</option>
+                <option value="Physics">⚛️ Physics ({subjectCounts?.physics ?? 33})</option>
+                <option value="Zoology">🧬 Zoology ({subjectCounts?.zoology ?? 6})</option>
+                <option value="Botany">🌿 Botany ({subjectCounts?.botany ?? 4})</option>
               </select>
             </div>
           )}

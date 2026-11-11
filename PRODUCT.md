@@ -12,6 +12,7 @@ Simultaneously, **faculties lose cognitive stamina**: reviewing 60 unstructured,
 2. **🧘 Zen Calm Focus Mode for Faculties:** Rather than overwhelming tired professors with crowded data tables, our console defaults to an uncluttered single-question view with large, soothing action buttons and smooth keyboard glide (`J`/`K`).
 3. **Voice & AI Co-Pilot with Formula Sanity:** Faculties can speak their explanation naturally; the agent sanity-checks mathematical formulas (e.g. series LCR phasor theory, flux) to prevent fatigue-induced slips before dispatch.
 4. **Empathetic, Transparent Student Replies:** We never send canned bot responses. If the key was wrong, we validate their effort and immediately unblock their score; if they were wrong, we gently explain the conceptual trap.
+5. **Dean Department Segmentation:** Institutional leaders can segment triage queues and live doubt feeds by subject (Physics, Zoology, Botany) with live counters to isolate department backlogs and ensure SLA adherence without cognitive clutter.
 
 ---
 
