@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "cd console && npm install && npm run build",
+    "build": "sh -c 'if [ -d console ]; then cd console && npm install && npm run build; else npm run build; fi'",
     "dev": "cd console && npm run dev",
     "start": "cd console && npm run preview"
   }
